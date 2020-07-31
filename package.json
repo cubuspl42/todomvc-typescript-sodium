@@ -1,4 +1,5 @@
 {
+  "name": "todomvc-typescript-sodium",
   "private": true,
   "dependencies": {
     "todomvc-app-css": "^2.0.0",
