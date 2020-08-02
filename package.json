@@ -2,9 +2,10 @@
   "name": "todomvc-typescript-sodium",
   "private": true,
   "dependencies": {
+    "lazy-get-decorator": "^2.2.0",
+    "sodiumjs": "file:../sodium-typescript",
     "todomvc-app-css": "^2.0.0",
-    "todomvc-common": "^1.0.0",
-    "sodiumjs": "file:../sodium-typescript"
+    "todomvc-common": "^1.0.0"
   },
   "devDependencies": {
     "cross-env": "^5.0.1",
