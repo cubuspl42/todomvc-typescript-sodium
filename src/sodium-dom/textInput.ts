@@ -1,7 +1,7 @@
 import { NaElement, NaElementProps } from "./dom";
 import { Cell, Stream, StreamSink, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
-import { setClassName } from "./utils";
+import { linkClassName } from "./utils";
 
 interface NaTextInputElementProps extends NaElementProps {
 	initialText?: string;
@@ -19,7 +19,7 @@ export class NaTextInputElement extends NaElement {
 	@LazyGetter()
 	get htmlElement(): HTMLInputElement {
 		const element = document.createElement("input");
-		setClassName(element, this.props);
+		linkClassName(element, this.props);
 		return element;
 	}
 

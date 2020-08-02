@@ -1,7 +1,7 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps } from "./dom";
 import { Cell, Stream, StreamSink } from "sodiumjs";
-import { setClassName } from "./utils";
+import { linkClassName } from "./utils";
 
 interface NaCheckboxElementProps extends NaElementProps {
 	initialChecked?: boolean,
@@ -30,7 +30,7 @@ export class NaCheckboxElement extends NaElement {
 		const element = document.createElement("input");
 		element.type = "checkbox";
 
-		setClassName(element, this.props);
+		linkClassName(element, this.props);
 
 		// TODO: Unlisten
 		element.addEventListener('change', (e) => {
