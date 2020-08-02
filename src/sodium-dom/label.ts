@@ -3,6 +3,7 @@ import { NaElement, NaElementProps } from "./dom";
 import { linkClassName } from "./utils";
 
 interface NaLabelElementProps extends NaElementProps {
+	readonly htmlFor?: string;
 }
 
 export class NaLabelElement extends NaElement {
