@@ -1,7 +1,8 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { Stream, StreamSink, Unit } from "sodiumjs";
-import { NaElement, NaElementProps } from "./dom";
-import { linkClassName } from "./utils";
+import { NaElement, NaElementProps, NaNode } from "./dom";
+import { buildElementWithChildren, linkChildren, linkClassName } from "./utils";
+import { NaGenericElement } from "./genericElement";
 
 interface NaButtonElementProps extends NaElementProps {
 }
@@ -9,15 +10,19 @@ interface NaButtonElementProps extends NaElementProps {
 export class NaButtonElement extends NaElement {
 	private readonly props?: NaButtonElementProps;
 
-	constructor(props?: NaButtonElementProps) {
+	private readonly children: ReadonlyArray<NaNode>;
+
+	constructor(props: NaButtonElementProps | undefined, children: ReadonlyArray<NaNode>) {
 		super();
 		this.props = props;
+		this.children = children;
 	}
 
 	@LazyGetter()
 	get htmlElement(): HTMLButtonElement {
 		const element = document.createElement("button");
 		linkClassName(element, this.props);
+		linkChildren(element, this.children);
 		return element;
 	}
 
@@ -36,6 +41,16 @@ export class NaButtonElement extends NaElement {
 	}
 }
 
-export function button(props?: NaButtonElementProps): NaButtonElement {
-	return new NaButtonElement(props);
+export function button(props: NaButtonElementProps, ...children: ReadonlyArray<NaNode>): NaElement;
+export function button(...children: ReadonlyArray<NaNode>): NaElement;
+
+export function button(
+	arg0: NaButtonElementProps | NaNode,
+	...children: ReadonlyArray<NaNode>
+): NaElement {
+	return buildElementWithChildren(
+		arg0,
+		children,
+		(p, c) => new NaButtonElement(p, c),
+	);
 }

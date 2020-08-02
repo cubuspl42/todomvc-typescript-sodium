@@ -4,8 +4,10 @@ import { LazyGetter } from "lazy-get-decorator";
 import { linkClassName } from "./utils";
 
 interface NaTextInputElementProps extends NaElementProps {
-	initialText?: string;
-	sSubstituteText?: Stream<string>;
+	readonly initialText?: string;
+	readonly sSubstituteText?: Stream<string>;
+	readonly placeholder?: string;
+	readonly autofocus?: boolean;
 }
 
 export class NaTextInputElement extends NaElement {
@@ -20,6 +22,12 @@ export class NaTextInputElement extends NaElement {
 	get htmlElement(): HTMLInputElement {
 		const element = document.createElement("input");
 		linkClassName(element, this.props);
+
+		const placeholder = this.props?.placeholder;
+		if (placeholder !== undefined) {
+			element.placeholder = placeholder;
+		}
+
 		return element;
 	}
 

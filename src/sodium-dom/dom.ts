@@ -8,7 +8,8 @@ export abstract class NaElement {
 export type NaNode = NaElement | string;
 
 export interface NaElementProps {
-	className?: CellOr<string>;
+	readonly id?: string,
+	readonly className?: CellOr<string>;
 }
 
 export class NaDOM {
@@ -18,7 +19,7 @@ export class NaDOM {
 	): void {
 		Transaction.run(() => {
 			const element = build();
-			container.appendChild(element.htmlElement);
+			container.prepend(element.htmlElement);
 		});
 	}
 }

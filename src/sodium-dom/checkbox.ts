@@ -4,8 +4,8 @@ import { Cell, Stream, StreamSink } from "sodiumjs";
 import { linkClassName } from "./utils";
 
 interface NaCheckboxElementProps extends NaElementProps {
-	initialChecked?: boolean,
-	sCheck?: Stream<boolean>,
+	readonly initialChecked?: boolean,
+	readonly sCheck?: Stream<boolean>,
 }
 
 export class NaCheckboxElement extends NaElement {
