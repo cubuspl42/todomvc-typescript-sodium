@@ -2,15 +2,15 @@ import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps, NaNode } from "./dom";
 import { buildElementWithChildren, linkChildren, linkClassName } from "./utils";
 
-interface NaLiElementProps extends NaElementProps {
+interface NaUlElementProps extends NaElementProps {
 }
 
-export class NaLiElement extends NaElement {
-	private readonly props?: NaLiElementProps;
+export class NaUlElement extends NaElement {
+	private readonly props?: NaUlElementProps;
 
 	private readonly children: ReadonlyArray<NaNode>;
 
-	constructor(props: NaLiElementProps | undefined, children: ReadonlyArray<NaNode>) {
+	constructor(props: NaUlElementProps | undefined, children: ReadonlyArray<NaNode>) {
 		super();
 		this.props = props;
 		this.children = children;
@@ -18,23 +18,23 @@ export class NaLiElement extends NaElement {
 
 	@LazyGetter()
 	get htmlElement(): HTMLElement {
-		const element = document.createElement("li");
+		const element = document.createElement("ul");
 		linkClassName(element, this.props);
 		linkChildren(element, this.children);
 		return element;
 	}
 }
 
-export function li(props: NaLiElementProps, ...children: ReadonlyArray<NaNode>): NaLiElement;
-export function li(...children: ReadonlyArray<NaNode>): NaLiElement;
+export function ul(props: NaUlElementProps, ...children: ReadonlyArray<NaNode>): NaUlElement;
+export function ul(...children: ReadonlyArray<NaNode>): NaUlElement;
 
-export function li(
-	arg0: NaLiElementProps | NaNode,
+export function ul(
+	arg0: NaUlElementProps | NaNode,
 	...children: ReadonlyArray<NaNode>
-): NaLiElement {
+): NaUlElement {
 	return buildElementWithChildren(
 		arg0,
 		children,
-		(p, c) => new NaLiElement(p, c),
+		(p, c) => new NaUlElement(p, c),
 	);
 }
