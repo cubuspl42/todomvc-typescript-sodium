@@ -1,5 +1,5 @@
 import { NaElement, NaElementProps } from "./dom";
-import { Cell, Stream, StreamSink, Unit } from "sodiumjs";
+import { Cell, Stream, StreamSink } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
 import { linkClassName } from "./utils";
 

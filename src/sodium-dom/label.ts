@@ -1,6 +1,6 @@
 import { LazyGetter } from "lazy-get-decorator";
-import { NaNode, NaElement, NaElementProps } from "./dom";
-import { buildNode, linkClassName } from "./utils";
+import { NaElement, NaElementProps } from "./dom";
+import { linkClassName } from "./utils";
 
 interface NaLabelElementProps extends NaElementProps {
 }

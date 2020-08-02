@@ -1,7 +1,6 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { NaNode, NaElement, NaElementProps } from "./dom";
-import { buildNode, linkClassName } from "./utils";
-import { NaLabelElement } from "./label";
+import { buildElementWithChildren, buildNode, linkChildren, linkClassName } from "./utils";
 
 interface NaDivElementProps extends NaElementProps {
 }
@@ -21,8 +20,7 @@ export class NaDivElement extends NaElement {
 	get htmlElement(): HTMLElement {
 		const element = document.createElement("div");
 		linkClassName(element, this.props);
-
-		this.children.forEach((child) => element.appendChild(buildNode(child)));
+		linkChildren(element, this.children);
 		return element;
 	}
 }
@@ -34,9 +32,9 @@ export function div(
 	arg0: NaDivElementProps | NaNode,
 	...children: ReadonlyArray<NaNode>
 ): NaDivElement {
-	if (!(arg0 instanceof NaElement || typeof arg0 === 'string')) {
-		return new NaDivElement(arg0, children);
-	} else {
-		return new NaDivElement(undefined, [arg0, ...children]);
-	}
+	return buildElementWithChildren(
+		arg0,
+		children,
+		(p, c) => new NaDivElement(p, c),
+	);
 }
