@@ -1,7 +1,7 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { Stream, StreamSink, Unit } from "sodiumjs";
 import { NaElement, NaElementProps } from "./dom";
-import { setClassName } from "./utils";
+import { linkClassName } from "./utils";
 
 interface NaButtonElementProps extends NaElementProps {
 }
@@ -17,7 +17,7 @@ export class NaButtonElement extends NaElement {
 	@LazyGetter()
 	get htmlElement(): HTMLButtonElement {
 		const element = document.createElement("button");
-		setClassName(element, this.props);
+		linkClassName(element, this.props);
 		return element;
 	}
 

@@ -1,4 +1,5 @@
 import { Transaction } from "sodiumjs";
+import { CellOr } from "./utils";
 
 export abstract class NaElement {
 	abstract get htmlElement(): HTMLElement;
@@ -7,7 +8,7 @@ export abstract class NaElement {
 export type NaNode = NaElement | string;
 
 export interface NaElementProps {
-	className?: string;
+	className?: CellOr<string>;
 }
 
 export class NaDOM {

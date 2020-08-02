@@ -7,9 +7,12 @@ import { button } from "./sodium-dom/button";
 import { textInput } from "./sodium-dom/textInput";
 
 function todoElement(): NaElement {
-	return li({ className: "completed" },
+	const todoCheckbox = checkbox({ className: "toggle" });
+	const cCompleted = todoCheckbox.cChecked;
+	const liClassName = cCompleted.map((c) => c ? "completed" : "");
+	return li({ className: liClassName },
 		div({ className: "view" },
-			checkbox({ className: "toggle" }),
+			todoCheckbox,
 			label("Taste JavaScript (really)!"),
 			button({ className: "destroy" }),
 		),

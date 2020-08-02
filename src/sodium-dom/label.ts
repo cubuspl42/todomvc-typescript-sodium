@@ -1,6 +1,6 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { NaNode, NaElement, NaElementProps } from "./dom";
-import { buildNode, setClassName } from "./utils";
+import { buildNode, linkClassName } from "./utils";
 
 interface NaLabelElementProps extends NaElementProps {
 }
@@ -19,7 +19,7 @@ export class NaLabelElement extends NaElement {
 	@LazyGetter()
 	get htmlElement(): HTMLElement {
 		const element = document.createElement("label");
-		setClassName(element, this.props);
+		linkClassName(element, this.props);
 
 		element.appendChild(document.createTextNode(this.text));
 		return element;
