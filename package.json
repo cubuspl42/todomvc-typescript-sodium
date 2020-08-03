@@ -5,7 +5,8 @@
     "lazy-get-decorator": "^2.2.0",
     "sodiumjs": "file:../sodium-typescript",
     "todomvc-app-css": "^2.0.0",
-    "todomvc-common": "^1.0.0"
+    "todomvc-common": "^1.0.0",
+    "ts-keycode-enum": "^1.0.6"
   },
   "devDependencies": {
     "source-map-loader": "^0.2.4",
