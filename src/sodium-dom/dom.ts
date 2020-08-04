@@ -7,6 +7,19 @@ export abstract class NaElement {
 	abstract get htmlElement(): HTMLElement;
 
 	@LazyGetter()
+	get sKeyDown(): Stream<Key> {
+		const element = this.htmlElement;
+		const sink = new StreamSink<Key>();
+
+		// TODO: Unlisten
+		element.addEventListener("keydown", (event) => {
+			sink.send(event.keyCode as Key);
+		});
+
+		return sink;
+	}
+
+	@LazyGetter()
 	get sKeyUp(): Stream<Key> {
 		const element = this.htmlElement;
 		const sink = new StreamSink<Key>();

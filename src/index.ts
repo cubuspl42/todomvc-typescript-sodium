@@ -26,7 +26,7 @@ function todoAppElement(): NaElement {
 		autofocus: true,
 	});
 
-	const sAddTodo = newTodoInput.sKeyUp
+	const sAddTodo = newTodoInput.sKeyDown
 		.filter((k) => k === Key.Enter)
 		.snapshot1(newTodoInput.cText)
 		.filter((n) => n.length > 0);
