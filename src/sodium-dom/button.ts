@@ -41,13 +41,13 @@ export class NaButtonElement extends NaElement {
 	}
 }
 
-export function button(props: NaButtonElementProps, ...children: ReadonlyArray<NaNode>): NaElement;
-export function button(...children: ReadonlyArray<NaNode>): NaElement;
+export function button(props: NaButtonElementProps, ...children: ReadonlyArray<NaNode>): NaButtonElement;
+export function button(...children: ReadonlyArray<NaNode>): NaButtonElement;
 
 export function button(
 	arg0: NaButtonElementProps | NaNode,
 	...children: ReadonlyArray<NaNode>
-): NaElement {
+): NaButtonElement {
 	return buildElementWithChildren(
 		arg0,
 		children,

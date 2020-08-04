@@ -14,9 +14,63 @@ import { span } from "./sodium-dom/span";
 import { strong } from "./sodium-dom/strong";
 import { link } from "./sodium-dom/a";
 import { Key } from "ts-keycode-enum";
-import { StreamLoop, Unit } from "sodiumjs";
+import { Cell, CellLoop, Operational, Stream, StreamLoop, Unit } from "sodiumjs";
+import { LazyGetter } from "lazy-get-decorator";
+import "./sodiumjs";
+
+class Todo {
+	constructor(
+		readonly text: string,
+	) {
+	}
+
+	readonly sSetDone = new StreamLoop<boolean>();
+
+	readonly cIsDone = this.sSetDone.hold(false);
+
+	readonly sDelete = new StreamLoop<Unit>();
+}
+
+class TodoList {
+	readonly sAddTodo = new StreamLoop<string>();
+
+	@LazyGetter()
+	get cTodos(): Cell<ReadonlyArray<Todo>> {
+		const cTodosLoop = new CellLoop<ReadonlyArray<Todo>>();
+
+		const sTodosAfterAdd = this.sAddTodo.snapshot(cTodosLoop,
+			(newTodoText, todos) =>
+				[...todos, new Todo(newTodoText)]
+		);
+
+		const sDeleteTodos = Cell.switchS(
+			cTodosLoop.map((todos) =>
+				Stream.mergeSet(
+					new Set(todos.map((todo) => todo.sDelete.mapTo(todo))),
+				),
+			),
+		);
+
+		const sTodosAfterDelete = sDeleteTodos.snapshot(cTodosLoop,
+			(todosToRemove, todos) =>
+				todos.filter((todo) => !todosToRemove.has(todo)),
+		);
+
+		const cTodos_ = sTodosAfterAdd.orElse(sTodosAfterDelete).hold([
+			new Todo("Buy a unicorn"),
+			new Todo("Taste JavaScript"),
+			new Todo("Taste JavaScript (really)!"),
+		]);
+
+		cTodosLoop.loop(cTodos_);
+
+		return cTodos_;
+	}
+}
 
 function todoAppElement(): NaElement {
+	const todoList = new TodoList();
+
 	const sClearNewTodoInput = new StreamLoop<Unit>();
 
 	const newTodoInput = textInput({
@@ -33,10 +87,7 @@ function todoAppElement(): NaElement {
 
 	sClearNewTodoInput.loop(sAddTodo);
 
-	const cTodoNames = sAddTodo.accum<ReadonlyArray<string>>(
-		["Buy a unicorn", "Taste JavaScript", "Taste JavaScript (really)!"],
-		(newTodoName, todoNames) => [...todoNames, newTodoName],
-	);
+	todoList.sAddTodo.loop(sAddTodo);
 
 	return section({ className: "todoapp" },
 		header({ className: "header" },
@@ -48,8 +99,8 @@ function todoAppElement(): NaElement {
 			checkbox({ id: "toggle-all", className: "toggle-all" }),
 			label({ htmlFor: "toggle-all" }, "Mark all as complete"),
 			ul({ className: "todo-list" },
-				cTodoNames.map((todoNames) =>
-					todoNames.map((todoName) => todoElement(todoName)),
+				todoList.cTodos.map((todos) =>
+					todos.map((todo) => todoElement(todo)),
 				),
 			)
 		),
@@ -73,15 +124,24 @@ function todoAppElement(): NaElement {
 
 // These are here just to show the structure of the list items
 // List items should get the class `editing` when editing and `completed` when marked as completed
-function todoElement(labelText: string): NaElement {
-	const todoCheckbox = checkbox({ className: "toggle" });
-	const cCompleted = todoCheckbox.cChecked;
-	const liClassName = cCompleted.map((c) => c ? "completed" : "");
+function todoElement(todo: Todo): NaElement {
+	const todoCheckbox = checkbox({
+		initialChecked: todo.cIsDone.sample(),
+		className: "toggle"
+	});
+
+	todo.sSetDone.loop(Operational.updates(todoCheckbox.cChecked));
+
+	const liClassName = todo.cIsDone.map((d) => d ? "completed" : "");
+	const deleteButton = button({ className: "destroy" });
+
+	todo.sDelete.loop(deleteButton.sPressed);
+
 	return li({ className: liClassName },
 		div({ className: "view" },
 			todoCheckbox,
-			label(labelText),
-			button({ className: "destroy" }),
+			label(todo.text),
+			deleteButton,
 		),
 		textInput({ className: "edit", initialText: "Create a TodoMVC template" }),
 	);

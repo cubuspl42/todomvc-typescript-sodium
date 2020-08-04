@@ -29,6 +29,7 @@ export class NaCheckboxElement extends NaElement {
 	get htmlElement(): HTMLElement {
 		const element = document.createElement("input");
 		element.type = "checkbox";
+		element.checked = this.props?.initialChecked ?? false;
 
 		linkClassName(element, this.props);
 
