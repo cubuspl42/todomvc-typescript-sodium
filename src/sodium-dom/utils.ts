@@ -56,7 +56,7 @@ export function buildElementWithChildrenC<TElementProps extends NaElementProps, 
 	build: (props: TElementProps | undefined, children: Cell<ReadonlyArray<NaNode>>) => TElement,
 ): TElement {
 	if (arg0 instanceof Cell || arg0 instanceof Array) {
-		return build(undefined, cellOrToCell(arg0));
+		return build(undefined, normalizeNaElementChildren(arg0));
 	} else {
 		return build(arg0 as TElementProps, normalizeNaElementChildren(arg1!));
 	}

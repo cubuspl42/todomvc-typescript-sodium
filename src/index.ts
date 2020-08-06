@@ -113,6 +113,8 @@ function todoAppElement(): NaElement {
 
 	todoList.sAddTodo.loop(sAddTodo);
 
+	const cUncompletedCount = todoList.cUncompletedTodos.map((todos) => todos.length);
+
 	const clearCompletedButton = button({ className: "clear-completed" }, "Clear completed");
 
 	todoList.sClearCompleted.loop(clearCompletedButton.sPressed);
@@ -135,9 +137,10 @@ function todoAppElement(): NaElement {
 		// This footer should hidden by default and shown when there are todos
 		footer({ className: "footer" }, [
 			// This should be `0 items left` by default
-			span({ className: "todo-count" },
-				[strong(["0"]), " item left",]
-			),
+			span({ className: "todo-count" }, [
+				strong([cUncompletedCount.map((n) => `${n}`)]),
+				cUncompletedCount.map((n) => ` item${n === 1 ? '' : 's'} left`),
+			]),
 			// Remove this if you don't implement routing
 			ul({ className: "filters" }, [
 				li([link({ className: "selected", href: "#/" }, "All")]),
