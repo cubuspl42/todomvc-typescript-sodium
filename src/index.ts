@@ -22,15 +22,20 @@ import { empty } from "./sodium-dom/emptyElement";
 
 class Todo {
 	constructor(
-		readonly text: string,
+		text: string,
 	) {
+		this.text = this.sEdit.hold(text);
 	}
+
+	readonly text: Cell<string>;
 
 	readonly sSetDone = new StreamLoop<boolean>();
 
 	readonly cIsDone = this.sSetDone.hold(false);
 
 	readonly sDelete = new StreamLoop<Unit>();
+
+	readonly sEdit = new StreamLoop<string>();
 }
 
 class TodoList {
@@ -127,7 +132,7 @@ function todoAppElement(): NaElement {
 		// This section should be hidden by default and shown when there are todos
 		section({ className: "main" }, [
 			checkbox({ id: "toggle-all", className: "toggle-all" }),
-			label({ htmlFor: "toggle-all" }, "Mark all as complete"),
+			label({ htmlFor: "toggle-all" }, ["Mark all as complete"]),
 			ul({ className: "todo-list" },
 				todoList.cTodos.map((todos) =>
 					todos.map((todo) => todoElement(todo)),
@@ -157,6 +162,22 @@ function todoAppElement(): NaElement {
 	);
 }
 
+interface TodoElementState {
+}
+
+class TodoElementIdle implements TodoElementState {
+
+}
+
+class TodoElementEditing implements TodoElementState {
+	constructor(
+		readonly cEditedText: CellLoop<string>,
+		readonly sExit: Stream<Unit>,
+	) {
+	}
+}
+
+
 // These are here just to show the structure of the list items
 // List items should get the class `editing` when editing and `completed` when marked as completed
 function todoElement(todo: Todo): NaElement {
@@ -167,18 +188,61 @@ function todoElement(todo: Todo): NaElement {
 
 	todo.sSetDone.loop(Operational.updates(todoCheckbox.cChecked));
 
-	const liClassName = todo.cIsDone.map((d) => d ? "completed" : "");
+	const todoLabel = label([todo.text]);
+
 	const deleteButton = button({ className: "destroy" });
 
 	todo.sDelete.loop(deleteButton.sPressed);
 
+	const sStartEditing = todoLabel.sDoubleClick;
+
+	const todoTextEdit = textInput({
+		className: "edit",
+		initialText: "",
+		sSubstituteText: sStartEditing.snapshot1(todo.text),
+		sFocus: sStartEditing,
+	});
+
+	function idle(): Cell<boolean> {
+		return Cell.switchC(sStartEditing.once().map(editing).hold(new Cell(false)));
+	}
+
+	const sSubmitEdit = todoTextEdit.sKeyDown.filter((k) => k === Key.Enter).mapTo(Unit.UNIT);
+
+	const sEscDown = todoTextEdit.sKeyDown.filter((k) => k === Key.Escape).mapTo(Unit.UNIT);
+	const sClickedOutside = NaDOM.body.sClick.filter((e) => {
+		const target = e.target;
+		if (target !== null) {
+			return !todoTextEdit.contains(target);
+		} else {
+			return true;
+		}
+	}).mapTo(Unit.UNIT);
+	const sAbortEdit = sEscDown.orElse(sClickedOutside);
+
+	const sEndEditing = sSubmitEdit.orElse(sAbortEdit);
+
+	sEndEditing.listen(() => console.log("End editing"));
+
+	function editing(): Cell<boolean> {
+		return Cell.switchC(sEndEditing.once().map(idle).hold(new Cell(true)));
+	}
+
+	const cEditing = idle();
+
+	todo.sEdit.loop(sSubmitEdit.snapshot1(todoTextEdit.cText));
+
+	const liClassName = todo.cIsDone.lift(cEditing, (d, e) =>
+		`${d ? "completed" : ""} ${e ? "editing" : ""}`,
+	);
+
 	return li({ className: liClassName }, [
 		div({ className: "view" }, [
 			todoCheckbox,
-			label(todo.text),
+			todoLabel,
 			deleteButton,
 		]),
-		textInput({ className: "edit", initialText: "Create a TodoMVC template" }),
+		todoTextEdit,
 	]);
 }
 

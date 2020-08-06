@@ -26,6 +26,9 @@ export class NaGenericElement extends NaElement {
 		const element = document.createElement(this.tagName);
 		linkClassName(element, this.props);
 		linkChildrenC(element, this.children);
+
+		(element as any)._naElement = this;
+
 		return element;
 	}
 }

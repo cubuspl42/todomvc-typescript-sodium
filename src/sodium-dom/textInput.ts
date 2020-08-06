@@ -1,11 +1,12 @@
 import { NaElement, NaElementProps } from "./dom";
-import { Cell, Stream, StreamSink } from "sodiumjs";
+import { Cell, Stream, StreamSink, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
 import { linkClassName } from "./utils";
 
 interface NaTextInputElementProps extends NaElementProps {
 	readonly initialText?: string;
 	readonly sSubstituteText?: Stream<string>;
+	readonly sFocus?: Stream<Unit>;
 	readonly placeholder?: string;
 	readonly autofocus?: boolean;
 }
@@ -30,8 +31,22 @@ export class NaTextInputElement extends NaElement {
 
 		// TODO: Unlisten
 		this.props?.sSubstituteText?.listen((text) => {
-			element.value = "";
+			element.value = text;
 		});
+
+		const sFocus = this.props?.sFocus;
+		if (sFocus !== undefined) {
+			// Operational.defer(sFocus).listen(() => {
+			// 	element.focus();
+			// });
+			sFocus.listen(() => {
+				setTimeout(() => {
+					element.focus();
+				}, 0);
+			});
+		}
+
+		(element as any)._naElement = this;
 
 		return element;
 	}
