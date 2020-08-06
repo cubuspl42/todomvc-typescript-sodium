@@ -1,17 +1,16 @@
 import { NaElement, NaElementProps, NaNode } from "./dom";
-import { buildElementWithChildren } from "./utils";
-import { NaGenericElement } from "./genericElement";
+import { buildGenericElementWithChildrenC, CellOr } from "./utils";
+import { Cell } from "sodiumjs";
 
-export function footer(props: NaElementProps, ...children: ReadonlyArray<NaNode>): NaElement;
-export function footer(...children: ReadonlyArray<NaNode>): NaElement;
+export function footer(props: NaElementProps, children: ReadonlyArray<NaNode>): NaElement;
+export function footer(children: ReadonlyArray<NaNode>): NaElement;
+
+export function footer(props: NaElementProps, children: Cell<ReadonlyArray<NaNode>>): NaElement;
+export function footer(children: Cell<ReadonlyArray<NaNode>>): NaElement;
 
 export function footer(
-	arg0: NaElementProps | NaNode,
-	...children: ReadonlyArray<NaNode>
+	arg0: NaElementProps | CellOr<ReadonlyArray<NaNode>>,
+	arg1?: CellOr<ReadonlyArray<NaNode>>,
 ): NaElement {
-	return buildElementWithChildren(
-		arg0,
-		children,
-		(p, c) => new NaGenericElement("footer", p, c),
-	);
+	return buildGenericElementWithChildrenC(arg0, arg1, "footer");
 }

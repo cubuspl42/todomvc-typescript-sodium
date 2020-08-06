@@ -89,13 +89,13 @@ function todoAppElement(): NaElement {
 
 	todoList.sAddTodo.loop(sAddTodo);
 
-	return section({ className: "todoapp" },
-		header({ className: "header" },
-			h1("todos"),
+	return section({ className: "todoapp" }, [
+		header({ className: "header" }, [
+			h1(["todos"]),
 			newTodoInput,
-		),
+		]),
 		// This section should be hidden by default and shown when there are todos
-		section({ className: "main" },
+		section({ className: "main" }, [
 			checkbox({ id: "toggle-all", className: "toggle-all" }),
 			label({ htmlFor: "toggle-all" }, "Mark all as complete"),
 			ul({ className: "todo-list" },
@@ -103,22 +103,22 @@ function todoAppElement(): NaElement {
 					todos.map((todo) => todoElement(todo)),
 				),
 			)
-		),
+		]),
 		// This footer should hidden by default and shown when there are todos
-		footer({ className: "footer" },
+		footer({ className: "footer" }, [
 			// This should be `0 items left` by default
 			span({ className: "todo-count" },
-				strong("0"), " item left",
+				[strong(["0"]), " item left",]
 			),
 			// Remove this if you don't implement routing
 			ul({ className: "filters" }, [
-				li(link({ className: "selected", href: "#/" }, "All")),
-				li(link({ href: "#/active" }, "Active")),
-				li(link({ href: "#/completed" }, "Completed")),
+				li([link({ className: "selected", href: "#/" }, "All")]),
+				li([link({ href: "#/active" }, "Active")]),
+				li([link({ href: "#/completed" }, "Completed")]),
 			]),
 			// Hidden if no completed items are left ↓
 			button({ className: "clear-completed" }, "Clear completed"),
-		)
+		])]
 	);
 }
 
@@ -137,14 +137,14 @@ function todoElement(todo: Todo): NaElement {
 
 	todo.sDelete.loop(deleteButton.sPressed);
 
-	return li({ className: liClassName },
-		div({ className: "view" },
+	return li({ className: liClassName }, [
+		div({ className: "view" }, [
 			todoCheckbox,
 			label(todo.text),
 			deleteButton,
-		),
+		]),
 		textInput({ className: "edit", initialText: "Create a TodoMVC template" }),
-	);
+	]);
 }
 
 NaDOM.render(

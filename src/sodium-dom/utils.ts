@@ -1,5 +1,6 @@
 import { NaElement, NaElementProps, NaNode } from "./dom";
 import { Cell } from "sodiumjs";
+import { NaGenericElement } from "./genericElement";
 
 export type CellOr<A> = Cell<A> | A;
 
@@ -27,6 +28,30 @@ export function buildElementWithChildren<TElementProps extends NaElementProps, T
 	} else {
 		return build(undefined, [arg0, ...children]);
 	}
+}
+
+export function buildElementWithChildrenC<TElementProps extends NaElementProps, TElement extends NaElement>(
+	arg0: NaElementProps | CellOr<ReadonlyArray<NaNode>>,
+	arg1: CellOr<ReadonlyArray<NaNode>> | undefined,
+	build: (props: TElementProps | undefined, children: Cell<ReadonlyArray<NaNode>>) => TElement,
+): TElement {
+	if (arg0 instanceof Cell || arg0 instanceof Array) {
+		return build(undefined, cellOrToCell(arg0));
+	} else {
+		return build(arg0 as TElementProps, cellOrToCell(arg1!));
+	}
+}
+
+export function buildGenericElementWithChildrenC(
+	arg0: NaElementProps | CellOr<ReadonlyArray<NaNode>>,
+	arg1: CellOr<ReadonlyArray<NaNode>> | undefined,
+	tag: string,
+): NaElement {
+	return buildElementWithChildrenC(
+		arg0,
+		arg1,
+		(p, c) => new NaGenericElement(tag, p, c),
+	);
 }
 
 function clearChildren(element: HTMLElement) {
