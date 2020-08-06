@@ -1,6 +1,7 @@
 import { NaElement, NaElementProps, NaNode } from "./dom";
 import { Cell } from "sodiumjs";
 import { NaGenericElement } from "./genericElement";
+import { NaEmptyElement } from "./emptyElement";
 
 export type CellOr<A> = Cell<A> | A;
 
@@ -30,21 +31,40 @@ export function buildElementWithChildren<TElementProps extends NaElementProps, T
 	}
 }
 
+
+export type NaElementChildren =
+	ReadonlyArray<NaNode | Cell<NaNode | null>>
+	| Cell<ReadonlyArray<NaNode>>;
+
+function filterNotNull<A>(array: ReadonlyArray<A>): ReadonlyArray<NonNullable<A>> {
+	return array.filter((a) => a !== null) as unknown as ReadonlyArray<NonNullable<A>>;
+}
+
+function normalizeNaElementChildren(children: NaElementChildren): Cell<ReadonlyArray<NaNode>> {
+	if (children instanceof Cell) {
+		return children;
+	} else {
+		const children_: ReadonlyArray<Cell<NaNode | null>> =
+			children.map((c) => c instanceof Cell ? c : new Cell(c));
+		return Cell.liftArray(children_).map((c) => filterNotNull(c));
+	}
+}
+
 export function buildElementWithChildrenC<TElementProps extends NaElementProps, TElement extends NaElement>(
-	arg0: NaElementProps | CellOr<ReadonlyArray<NaNode>>,
-	arg1: CellOr<ReadonlyArray<NaNode>> | undefined,
+	arg0: NaElementProps | NaElementChildren,
+	arg1: NaElementChildren | undefined,
 	build: (props: TElementProps | undefined, children: Cell<ReadonlyArray<NaNode>>) => TElement,
 ): TElement {
 	if (arg0 instanceof Cell || arg0 instanceof Array) {
 		return build(undefined, cellOrToCell(arg0));
 	} else {
-		return build(arg0 as TElementProps, cellOrToCell(arg1!));
+		return build(arg0 as TElementProps, normalizeNaElementChildren(arg1!));
 	}
 }
 
 export function buildGenericElementWithChildrenC(
-	arg0: NaElementProps | CellOr<ReadonlyArray<NaNode>>,
-	arg1: CellOr<ReadonlyArray<NaNode>> | undefined,
+	arg0: NaElementProps | NaElementChildren,
+	arg1: NaElementChildren | undefined,
 	tag: string,
 ): NaElement {
 	return buildElementWithChildrenC(
@@ -68,7 +88,11 @@ export function linkChildrenC(htmlElement: HTMLElement, children: Cell<ReadonlyA
 	// TODO: Unlisten
 	children?.listen((c) => {
 		clearChildren(htmlElement);
-		c.forEach((child) => htmlElement.appendChild(buildNode(child)));
+		c.forEach((child) => {
+			if (!(child instanceof NaEmptyElement)) {
+				htmlElement.appendChild(buildNode(child));
+			}
+		});
 	});
 }
 

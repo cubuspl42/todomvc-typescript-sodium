@@ -17,6 +17,8 @@ import { Key } from "ts-keycode-enum";
 import { Cell, CellLoop, Operational, Stream, StreamLoop, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
 import "./sodiumjs";
+import { CellArrays } from "./utils";
+import { empty } from "./sodium-dom/emptyElement";
 
 class Todo {
 	constructor(
@@ -34,6 +36,8 @@ class Todo {
 class TodoList {
 	readonly sAddTodo = new StreamLoop<string>();
 
+	readonly sClearCompleted = new StreamLoop<Unit>();
+
 	@LazyGetter()
 	get cTodos(): Cell<ReadonlyArray<Todo>> {
 		const cTodosLoop = new CellLoop<ReadonlyArray<Todo>>();
@@ -49,6 +53,10 @@ class TodoList {
 					new Set(todos.map((todo) => todo.sDelete.mapTo(todo))),
 				),
 			),
+		).orElse(this.sClearCompleted.map(() =>
+			new Set(cTodosLoop.sample().filter((todo) =>
+				todo.cIsDone.sample(),
+			))),
 		);
 
 		const sTodosAfterDelete = sDeleteTodos.snapshot(cTodosLoop,
@@ -65,6 +73,22 @@ class TodoList {
 		cTodosLoop.loop(cTodos_);
 
 		return cTodos_;
+	}
+
+	private buildFilteredTodos(predicate: (todo: Todo) => Cell<boolean>): Cell<ReadonlyArray<Todo>> {
+		return this.cTodos.flatMap((todos) =>
+			CellArrays.filter(todos, predicate),
+		);
+	}
+
+	@LazyGetter()
+	get cCompletedTodos(): Cell<ReadonlyArray<Todo>> {
+		return this.buildFilteredTodos((todo) => todo.cIsDone);
+	}
+
+	@LazyGetter()
+	get cUncompletedTodos(): Cell<ReadonlyArray<Todo>> {
+		return this.buildFilteredTodos((todo) => todo.cIsDone.map((d) => !d));
 	}
 }
 
@@ -88,6 +112,10 @@ function todoAppElement(): NaElement {
 	sClearNewTodoInput.loop(sAddTodo);
 
 	todoList.sAddTodo.loop(sAddTodo);
+
+	const clearCompletedButton = button({ className: "clear-completed" }, "Clear completed");
+
+	todoList.sClearCompleted.loop(clearCompletedButton.sPressed);
 
 	return section({ className: "todoapp" }, [
 		header({ className: "header" }, [
@@ -117,7 +145,11 @@ function todoAppElement(): NaElement {
 				li([link({ href: "#/completed" }, "Completed")]),
 			]),
 			// Hidden if no completed items are left ↓
-			button({ className: "clear-completed" }, "Clear completed"),
+			todoList.cCompletedTodos.map((todos) =>
+				todos.length > 0 ?
+					clearCompletedButton :
+					empty()
+			),
 		])]
 	);
 }
