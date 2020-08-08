@@ -185,25 +185,28 @@ function todoAppElement(): NaElement {
 				empty(),
 			),
 			// This footer should hidden by default and shown when there are todos
-			footer({ className: "footer" }, [
-				// This should be `0 items left` by default
-				span({ className: "todo-count" }, [
-					strong([cUncompletedCount.map((n) => `${n}`)]),
-					cUncompletedCount.map((n) => ` item${n === 1 ? '' : 's'} left`),
-				]),
-				// Remove this if you don't implement routing
-				ul({ className: "filters" }, [
-					li([link({ className: "selected", href: "#/" }, "All")]),
-					li([link({ href: "#/active" }, "Active")]),
-					li([link({ href: "#/completed" }, "Completed")]),
-				]),
-				// Hidden if no completed items are left ↓
-				todoList.cCompletedTodos.map((todos) =>
-					todos.length > 0 ?
-						clearCompletedButton :
-						empty()
-				),
-			]),
+			cAnyTodos.map((a) => a ?
+				footer({ className: "footer" }, [
+					// This should be `0 items left` by default
+					span({ className: "todo-count" }, [
+						strong([cUncompletedCount.map((n) => `${n}`)]),
+						cUncompletedCount.map((n) => ` item${n === 1 ? '' : 's'} left`),
+					]),
+					// Remove this if you don't implement routing
+					ul({ className: "filters" }, [
+						li([link({ className: "selected", href: "#/" }, "All")]),
+						li([link({ href: "#/active" }, "Active")]),
+						li([link({ href: "#/completed" }, "Completed")]),
+					]),
+					// Hidden if no completed items are left ↓
+					todoList.cCompletedTodos.map((todos) =>
+						todos.length > 0 ?
+							clearCompletedButton :
+							empty()
+					),
+				]) :
+				empty(),
+			),
 		]
 	);
 }
