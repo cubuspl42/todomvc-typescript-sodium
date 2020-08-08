@@ -28,6 +28,11 @@ export class NaTextInputElement extends NaElement {
 			element.placeholder = placeholder;
 		}
 
+		// TODO: Unlisten
+		this.props?.sSubstituteText?.listen((text) => {
+			element.value = "";
+		});
+
 		return element;
 	}
 
