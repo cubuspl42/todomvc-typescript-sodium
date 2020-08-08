@@ -9,16 +9,16 @@ import { ul } from "./sodium-dom/ul";
 import { section } from "./sodium-dom/section";
 import { header } from "./sodium-dom/header";
 import { h1 } from "./sodium-dom/h1";
-import { footer } from "./sodium-dom/footer";
-import { span } from "./sodium-dom/span";
-import { strong } from "./sodium-dom/strong";
-import { link } from "./sodium-dom/a";
 import { Key } from "ts-keycode-enum";
 import { Cell, CellLoop, Operational, Stream, StreamLoop, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
 import "./sodiumjs";
 import { CellArrays } from "./utils";
 import { empty } from "./sodium-dom/emptyElement";
+import { footer } from "./sodium-dom/footer";
+import { span } from "./sodium-dom/span";
+import { strong } from "./sodium-dom/strong";
+import { link } from "./sodium-dom/a";
 
 class Todo {
 	constructor(
@@ -131,6 +131,8 @@ class TodoList {
 function todoAppElement(): NaElement {
 	const todoList = new TodoList();
 
+	const cAnyTodos = todoList.cTodos.map((todos) => todos.length > 0);
+
 	const toggleAllCheckbox = checkbox({
 		id: "toggle-all",
 		className: "toggle-all",
@@ -165,40 +167,44 @@ function todoAppElement(): NaElement {
 	todoList.sClearCompleted.loop(clearCompletedButton.sPressed);
 
 	return section({ className: "todoapp" }, [
-		header({ className: "header" }, [
-			h1(["todos"]),
-			newTodoInput,
-		]),
-		// This section should be hidden by default and shown when there are todos
-		section({ className: "main" }, [
-			toggleAllCheckbox,
-			label({ htmlFor: "toggle-all" }, ["Mark all as complete"]),
-			ul({ className: "todo-list" },
-				todoList.cTodos.map((todos) =>
-					todos.map((todo) => todoElement(todo)),
-				),
-			)
-		]),
-		// This footer should hidden by default and shown when there are todos
-		footer({ className: "footer" }, [
-			// This should be `0 items left` by default
-			span({ className: "todo-count" }, [
-				strong([cUncompletedCount.map((n) => `${n}`)]),
-				cUncompletedCount.map((n) => ` item${n === 1 ? '' : 's'} left`),
+			header({ className: "header" }, [
+				h1(["todos"]),
+				newTodoInput,
 			]),
-			// Remove this if you don't implement routing
-			ul({ className: "filters" }, [
-				li([link({ className: "selected", href: "#/" }, "All")]),
-				li([link({ href: "#/active" }, "Active")]),
-				li([link({ href: "#/completed" }, "Completed")]),
-			]),
-			// Hidden if no completed items are left ↓
-			todoList.cCompletedTodos.map((todos) =>
-				todos.length > 0 ?
-					clearCompletedButton :
-					empty()
+			// This section should be hidden by default and shown when there are todos
+			cAnyTodos.map((a) => a ?
+				section({ className: "main" }, [
+					toggleAllCheckbox,
+					label({ htmlFor: "toggle-all" }, ["Mark all as complete"]),
+					ul({ className: "todo-list" },
+						todoList.cTodos.map((todos) =>
+							todos.map((todo) => todoElement(todo)),
+						),
+					)
+				]) :
+				empty(),
 			),
-		])]
+			// This footer should hidden by default and shown when there are todos
+			footer({ className: "footer" }, [
+				// This should be `0 items left` by default
+				span({ className: "todo-count" }, [
+					strong([cUncompletedCount.map((n) => `${n}`)]),
+					cUncompletedCount.map((n) => ` item${n === 1 ? '' : 's'} left`),
+				]),
+				// Remove this if you don't implement routing
+				ul({ className: "filters" }, [
+					li([link({ className: "selected", href: "#/" }, "All")]),
+					li([link({ href: "#/active" }, "Active")]),
+					li([link({ href: "#/completed" }, "Completed")]),
+				]),
+				// Hidden if no completed items are left ↓
+				todoList.cCompletedTodos.map((todos) =>
+					todos.length > 0 ?
+						clearCompletedButton :
+						empty()
+				),
+			]),
+		]
 	);
 }
 
