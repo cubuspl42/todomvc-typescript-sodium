@@ -22,16 +22,23 @@ import { empty } from "./sodium-dom/emptyElement";
 
 class Todo {
 	constructor(
+		sSetDoneAll: Stream<boolean>,
 		text: string,
 	) {
+		this.sSetDoneAll = sSetDoneAll;
 		this.text = this.sEdit.hold(text);
 	}
+
+	private readonly sSetDoneAll: Stream<boolean>;
 
 	readonly text: Cell<string>;
 
 	readonly sSetDone = new StreamLoop<boolean>();
 
-	readonly cIsDone = this.sSetDone.hold(false);
+	@LazyGetter()
+	get cIsDone(): Cell<boolean> {
+		return this.sSetDoneAll.orElse(this.sSetDone).hold(false);
+	}
 
 	readonly sDelete = new StreamLoop<Unit>();
 
@@ -39,45 +46,69 @@ class Todo {
 }
 
 class TodoList {
+	private readonly _cTodos = new CellLoop<ReadonlyArray<Todo>>();
+
 	readonly sAddTodo = new StreamLoop<string>();
+
+	readonly sToggleAll = new StreamLoop<Unit>()
 
 	readonly sClearCompleted = new StreamLoop<Unit>();
 
-	@LazyGetter()
-	get cTodos(): Cell<ReadonlyArray<Todo>> {
-		const cTodosLoop = new CellLoop<ReadonlyArray<Todo>>();
+	constructor() {
+		this._cTodos.loop(this.buildCTodos());
+	}
 
-		const sTodosAfterAdd = this.sAddTodo.snapshot(cTodosLoop,
+	@LazyGetter()
+	get cAreAllTodosDone(): Cell<boolean> {
+		return this.cTodos.flatMap((todos) =>
+			CellArrays.every(todos, (todo) => todo.cIsDone),
+		);
+	}
+
+	@LazyGetter()
+	private get sSetDoneAll(): Stream<boolean> {
+		return this.sToggleAll
+			.snapshot1(this.cAreAllTodosDone)
+			.map((b) => !b);
+	}
+
+
+	get cTodos(): Cell<ReadonlyArray<Todo>> {
+		return this._cTodos;
+	}
+
+	buildCTodos(): Cell<ReadonlyArray<Todo>> {
+		const cTodos = this.cTodos;
+
+		const todo = (text: string) => new Todo(this.sSetDoneAll, text);
+
+		const sTodosAfterAdd = this.sAddTodo.snapshot(cTodos,
 			(newTodoText, todos) =>
-				[...todos, new Todo(newTodoText)]
+				[...todos, todo(newTodoText)]
 		);
 
 		const sDeleteTodos = Cell.switchS(
-			cTodosLoop.map((todos) =>
+			cTodos.map((todos) =>
 				Stream.mergeSet(
 					new Set(todos.map((todo) => todo.sDelete.mapTo(todo))),
 				),
 			),
 		).orElse(this.sClearCompleted.map(() =>
-			new Set(cTodosLoop.sample().filter((todo) =>
+			new Set(cTodos.sample().filter((todo) =>
 				todo.cIsDone.sample(),
 			))),
 		);
 
-		const sTodosAfterDelete = sDeleteTodos.snapshot(cTodosLoop,
+		const sTodosAfterDelete = sDeleteTodos.snapshot(cTodos,
 			(todosToRemove, todos) =>
 				todos.filter((todo) => !todosToRemove.has(todo)),
 		);
 
-		const cTodos_ = sTodosAfterAdd.orElse(sTodosAfterDelete).hold([
-			new Todo("Buy a unicorn"),
-			new Todo("Taste JavaScript"),
-			new Todo("Taste JavaScript (really)!"),
+		return sTodosAfterAdd.orElse(sTodosAfterDelete).hold([
+			todo("Buy a unicorn"),
+			todo("Taste JavaScript"),
+			todo("Taste JavaScript (really)!"),
 		]);
-
-		cTodosLoop.loop(cTodos_);
-
-		return cTodos_;
 	}
 
 	private buildFilteredTodos(predicate: (todo: Todo) => Cell<boolean>): Cell<ReadonlyArray<Todo>> {
@@ -99,6 +130,15 @@ class TodoList {
 
 function todoAppElement(): NaElement {
 	const todoList = new TodoList();
+
+	const toggleAllCheckbox = checkbox({
+		id: "toggle-all",
+		className: "toggle-all",
+		sSetChecked: Operational.updates(todoList.cAreAllTodosDone),
+		initialChecked: todoList.cAreAllTodosDone.sample(),
+	});
+
+	todoList.sToggleAll.loop(toggleAllCheckbox.sChange);
 
 	const sClearNewTodoInput = new StreamLoop<Unit>();
 
@@ -131,7 +171,7 @@ function todoAppElement(): NaElement {
 		]),
 		// This section should be hidden by default and shown when there are todos
 		section({ className: "main" }, [
-			checkbox({ id: "toggle-all", className: "toggle-all" }),
+			toggleAllCheckbox,
 			label({ htmlFor: "toggle-all" }, ["Mark all as complete"]),
 			ul({ className: "todo-list" },
 				todoList.cTodos.map((todos) =>
@@ -162,31 +202,16 @@ function todoAppElement(): NaElement {
 	);
 }
 
-interface TodoElementState {
-}
-
-class TodoElementIdle implements TodoElementState {
-
-}
-
-class TodoElementEditing implements TodoElementState {
-	constructor(
-		readonly cEditedText: CellLoop<string>,
-		readonly sExit: Stream<Unit>,
-	) {
-	}
-}
-
-
 // These are here just to show the structure of the list items
 // List items should get the class `editing` when editing and `completed` when marked as completed
 function todoElement(todo: Todo): NaElement {
 	const todoCheckbox = checkbox({
+		className: "toggle",
 		initialChecked: todo.cIsDone.sample(),
-		className: "toggle"
+		sSetChecked: Operational.updates(todo.cIsDone),
 	});
 
-	todo.sSetDone.loop(Operational.updates(todoCheckbox.cChecked));
+	todo.sSetDone.loop(todoCheckbox.sChange);
 
 	const todoLabel = label([todo.text]);
 

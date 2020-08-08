@@ -21,6 +21,10 @@ export class NaLabelElement extends NaElement {
 	@LazyGetter()
 	get htmlElement(): HTMLElement {
 		const element = document.createElement("label");
+		const htmlFor = this.props?.htmlFor;
+		if (htmlFor !== undefined) {
+			element.htmlFor = htmlFor;
+		}
 		linkClassName(element, this.props);
 		linkChildrenC(element, this.children);
 		return element;

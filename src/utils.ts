@@ -24,4 +24,10 @@ export class CellArrays {
 			.liftArray(array.map((a) => predicate(a).map((b): [A, boolean] => [a, b])))
 			.map((array_) => array_.flatMap(([a, b]) => b ? [a] : []));
 	}
+
+	static every<A>(array: ReadonlyArray<A>, predicate: (a: A) => Cell<boolean>): Cell<boolean> {
+		return Cell
+			.liftArray(array.map(predicate))
+			.map((array_) => array_.every((b) => b));
+	}
 }

@@ -5,7 +5,7 @@ import { linkClassName } from "./utils";
 
 interface NaCheckboxElementProps extends NaElementProps {
 	readonly initialChecked?: boolean,
-	readonly sCheck?: Stream<boolean>,
+	readonly sSetChecked?: Stream<boolean>,
 }
 
 export class NaCheckboxElement extends NaElement {
@@ -13,31 +13,46 @@ export class NaCheckboxElement extends NaElement {
 
 	readonly cChecked: Cell<boolean>;
 
-	private readonly sStateChanged = new StreamSink<boolean>();
-
 	constructor(props: NaCheckboxElementProps | undefined) {
 		super();
 		this.props = props;
 
-		const sCheck = props?.sCheck ?? new Stream<boolean>();
-		this.cChecked = sCheck
-			.orElse(this.sStateChanged)
+		const sSetChecked = props?.sSetChecked ?? new Stream<boolean>();
+
+		// TODO: Unlisten
+		sSetChecked.listen((c) => {
+			this.htmlElement.checked = c;
+		})
+
+		this.cChecked = this.sChange.orElse(sSetChecked)
 			.hold(props?.initialChecked ?? false);
 	}
 
 	@LazyGetter()
-	get htmlElement(): HTMLElement {
+	get sChange(): Stream<boolean> {
+		const element = this.htmlElement;
+		const sink = new StreamSink<boolean>();
+
+		// TODO: Unlisten
+		element.addEventListener("change", (e) => {
+			const target = e.target as HTMLInputElement;
+			sink.send(target.checked);
+		});
+
+		return sink;
+	}
+
+	@LazyGetter()
+	get htmlElement(): HTMLInputElement {
 		const element = document.createElement("input");
 		element.type = "checkbox";
 		element.checked = this.props?.initialChecked ?? false;
 
+		const id = this.props?.id;
+		if (id !== undefined) {
+			element.id = id;
+		}
 		linkClassName(element, this.props);
-
-		// TODO: Unlisten
-		element.addEventListener('change', (e) => {
-			const target = e.target as HTMLInputElement;
-			this.sStateChanged.send(target.checked);
-		});
 
 		return element;
 	}
