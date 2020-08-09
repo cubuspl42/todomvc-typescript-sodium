@@ -2,6 +2,7 @@ import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps, NaNode } from "./dom";
 import { buildElementWithChildrenC, linkChildrenC, linkClassName, NaElementChildren } from "./utils";
 import { Cell } from "sodiumjs";
+import { NaArray } from "../sodium-collections/array";
 
 interface NaLabelElementProps extends NaElementProps {
 	readonly htmlFor?: string;
@@ -10,9 +11,9 @@ interface NaLabelElementProps extends NaElementProps {
 export class NaLabelElement extends NaElement {
 	private readonly props?: NaLabelElementProps;
 
-	private readonly children: Cell<ReadonlyArray<NaNode>>;
+	private readonly children: NaArray<NaNode>;
 
-	constructor(props: NaLabelElementProps | undefined, children: Cell<ReadonlyArray<NaNode>>) {
+	constructor(props: NaLabelElementProps | undefined, children: NaArray<NaNode>) {
 		super();
 		this.props = props;
 		this.children = children;
@@ -34,11 +35,11 @@ export class NaLabelElement extends NaElement {
 export function label(props: NaLabelElementProps, children: ReadonlyArray<NaNode>): NaElement;
 export function label(children: ReadonlyArray<NaNode>): NaElement;
 
-export function label(props: NaLabelElementProps, children: Cell<ReadonlyArray<NaNode>>): NaElement;
-export function label(children: Cell<ReadonlyArray<NaNode>>): NaElement;
+export function label(props: NaLabelElementProps, children: NaArray<NaNode>): NaElement;
+export function label(children: NaArray<NaNode>): NaElement;
 
-export function label(props: NaLabelElementProps, children: ReadonlyArray<NaNode | Cell<NaNode | null>>): NaElement;
-export function label(children: ReadonlyArray<NaNode | Cell<NaNode | null>>): NaElement;
+export function label(props: NaLabelElementProps, children: ReadonlyArray<NaNode | Cell<NaNode>>): NaElement;
+export function label(children: ReadonlyArray<NaNode | Cell<NaNode>>): NaElement;
 
 export function label(
 	arg0: NaLabelElementProps | NaElementChildren,

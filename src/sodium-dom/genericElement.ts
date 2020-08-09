@@ -1,19 +1,19 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps, NaNode } from "./dom";
 import { linkChildrenC, linkClassName } from "./utils";
-import { Cell } from "sodiumjs";
+import { NaArray } from "../sodium-collections/array";
 
 export class NaGenericElement extends NaElement {
 	private readonly tagName: string;
 
 	private readonly props?: NaElementProps;
 
-	private readonly children: Cell<ReadonlyArray<NaNode>>;
+	private readonly children: NaArray<NaNode>;
 
 	constructor(
 		tagName: string,
 		props: NaElementProps | undefined,
-		children: Cell<ReadonlyArray<NaNode>>,
+		children: NaArray<NaNode>,
 	) {
 		super();
 		this.tagName = tagName;

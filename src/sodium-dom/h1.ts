@@ -1,16 +1,16 @@
 import { NaElement, NaElementProps, NaNode } from "./dom";
-import { buildGenericElementWithChildrenC, CellOr } from "./utils";
-import { Cell } from "sodiumjs";
+import { buildGenericElementWithChildrenC, NaElementChildren } from "./utils";
+import { NaArray } from "../sodium-collections/array";
 
 export function h1(props: NaElementProps, children: ReadonlyArray<NaNode>): NaElement;
 export function h1(children: ReadonlyArray<NaNode>): NaElement;
 
-export function h1(props: NaElementProps, children: Cell<ReadonlyArray<NaNode>>): NaElement;
-export function h1(children: Cell<ReadonlyArray<NaNode>>): NaElement;
+export function h1(props: NaElementProps, children: NaArray<NaNode>): NaElement;
+export function h1(children: NaArray<NaNode>): NaElement;
 
 export function h1(
-	arg0: NaElementProps | CellOr<ReadonlyArray<NaNode>>,
-	arg1?: CellOr<ReadonlyArray<NaNode>>,
+	arg0: NaElementProps | NaElementChildren,
+	arg1?: NaElementChildren,
 ): NaElement {
 	return buildGenericElementWithChildrenC(arg0, arg1, "h1");
 }

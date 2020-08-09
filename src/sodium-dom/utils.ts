@@ -1,7 +1,7 @@
 import { NaElement, NaElementProps, NaNode } from "./dom";
 import { Cell } from "sodiumjs";
 import { NaGenericElement } from "./genericElement";
-import { NaEmptyElement } from "./emptyElement";
+import { NaArray } from "../sodium-collections/array";
 
 export type CellOr<A> = Cell<A> | A;
 
@@ -31,31 +31,31 @@ export function buildElementWithChildren<TElementProps extends NaElementProps, T
 	}
 }
 
-
 export type NaElementChildren =
-	ReadonlyArray<NaNode | Cell<NaNode | null>>
-	| Cell<ReadonlyArray<NaNode>>;
+	ReadonlyArray<NaNode | Cell<NaNode>>
+	| NaArray<NaNode>;
 
-function filterNotNull<A>(array: ReadonlyArray<A>): ReadonlyArray<NonNullable<A>> {
-	return array.filter((a) => a !== null) as unknown as ReadonlyArray<NonNullable<A>>;
+function normalizeNaElementChild(child: NaNode | Cell<NaNode>): Cell<NaNode> {
+	return child instanceof Cell ?
+		child :
+		new Cell(child);
 }
 
-function normalizeNaElementChildren(children: NaElementChildren): Cell<ReadonlyArray<NaNode>> {
-	if (children instanceof Cell) {
+function normalizeNaElementChildren(children: NaElementChildren): NaArray<NaNode> {
+	if (children instanceof NaArray) {
 		return children;
 	} else {
-		const children_: ReadonlyArray<Cell<NaNode | null>> =
-			children.map((c) => c instanceof Cell ? c : new Cell(c));
-		return Cell.liftArray(children_).map((c) => filterNotNull(c));
+		const children_: ReadonlyArray<Cell<NaNode>> = children.map(normalizeNaElementChild);
+		return NaArray.melt(children_);
 	}
 }
 
 export function buildElementWithChildrenC<TElementProps extends NaElementProps, TElement extends NaElement>(
 	arg0: NaElementProps | NaElementChildren,
 	arg1: NaElementChildren | undefined,
-	build: (props: TElementProps | undefined, children: Cell<ReadonlyArray<NaNode>>) => TElement,
+	build: (props: TElementProps | undefined, children: NaArray<NaNode>) => TElement,
 ): TElement {
-	if (arg0 instanceof Cell || arg0 instanceof Array) {
+	if (arg0 instanceof NaArray || arg0 instanceof Array) {
 		return build(undefined, normalizeNaElementChildren(arg0));
 	} else {
 		return build(arg0 as TElementProps, normalizeNaElementChildren(arg1!));
@@ -84,14 +84,50 @@ export function linkChildren(htmlElement: HTMLElement, children: ReadonlyArray<N
 	children.forEach((child) => htmlElement.appendChild(buildNode(child)));
 }
 
-export function linkChildrenC(htmlElement: HTMLElement, children: Cell<ReadonlyArray<NaNode>>) {
+export function swapElements(node1: Node, node2: Node) {
+	const marker = document.createElement("div");
+	node1.parentNode?.insertBefore(marker, node1);
+	node2.parentNode?.insertBefore(node1, node2);
+	marker.parentNode?.insertBefore(node2, marker);
+	marker.parentNode?.removeChild(marker);
+}
+
+export function linkChildrenC(htmlElement: HTMLElement, children: NaArray<NaNode>) {
+	children.cContent.sample().forEach((element) => {
+		const childNode = buildNode(element);
+		htmlElement.appendChild(childNode);
+	});
+
 	// TODO: Unlisten
-	children?.listen((c) => {
-		clearChildren(htmlElement);
-		c.forEach((child) => {
-			if (!(child instanceof NaEmptyElement)) {
-				htmlElement.appendChild(buildNode(child));
-			}
+	children.sChange.listen((c) => {
+		c.updates?.forEach((element, index) => {
+			const oldNode = htmlElement.childNodes[index];
+			const newNode = buildNode(element);
+			htmlElement.replaceChild(newNode, oldNode);
+		});
+
+		c.swaps?.forEach((targetIndex, sourceIndex) => {
+			const node1 = htmlElement.childNodes[sourceIndex];
+			const node2 = htmlElement.childNodes[targetIndex];
+			swapElements(node1, node2);
+		});
+
+		const deletes = c.deletes ?? new Set();
+		const deletedNodes = [...deletes.values()].map(
+			(index) => htmlElement.childNodes[index],
+		);
+
+		c.inserts?.forEach((elements, index) => {
+			const newNodes = elements.map(buildNode);
+
+			let node: Node = htmlElement.childNodes[index] ?? null;
+			newNodes.reverse().forEach((newNode) => {
+				node = htmlElement.insertBefore(newNode, node);
+			})
+		});
+
+		deletedNodes.forEach((node) => {
+			htmlElement.removeChild(node);
 		});
 	});
 }

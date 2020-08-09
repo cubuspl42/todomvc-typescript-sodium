@@ -10,15 +10,15 @@ import { section } from "./sodium-dom/section";
 import { header } from "./sodium-dom/header";
 import { h1 } from "./sodium-dom/h1";
 import { Key } from "ts-keycode-enum";
-import { Cell, CellLoop, Operational, Stream, StreamLoop, Unit } from "sodiumjs";
+import { Cell, Operational, Stream, StreamLoop, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
 import "./sodiumjs";
-import { CellArrays } from "./utils";
 import { empty } from "./sodium-dom/emptyElement";
 import { footer } from "./sodium-dom/footer";
 import { span } from "./sodium-dom/span";
 import { strong } from "./sodium-dom/strong";
 import { link } from "./sodium-dom/a";
+import { NaArray, NaArrayChange, NaArrayLoop } from "./sodium-collections/array";
 
 class Todo {
 	constructor(
@@ -46,7 +46,7 @@ class Todo {
 }
 
 class TodoList {
-	private readonly _cTodos = new CellLoop<ReadonlyArray<Todo>>();
+	private readonly _aTodos = new NaArrayLoop<Todo>();
 
 	readonly sAddTodo = new StreamLoop<string>();
 
@@ -55,14 +55,54 @@ class TodoList {
 	readonly sClearCompleted = new StreamLoop<Unit>();
 
 	constructor() {
-		this._cTodos.loop(this.buildCTodos());
+		const todo = (text: string) => new Todo(this.sSetDoneAll, text);
+
+		const aTodos = this._aTodos;
+
+		const sAdd = this.sAddTodo;
+
+		const sRemove: Stream<Map<number, Unit>> =
+			aTodos.mergeMap((t) => t.sDelete);
+
+		const sAddChange = sAdd.map((name) => {
+			return aTodos.pushChange([
+				todo(name),
+			]);
+		});
+
+		const sRemoveChange = sRemove.map((m) =>
+			new NaArrayChange<Todo>({
+				deletes: new Set(m.keys()),
+			})
+		).orElse(this.sClearCompleted.map(() =>
+			new NaArrayChange<Todo>({
+				deletes: new Set(
+					aTodos.cContent.sample()
+						.flatMap((todo, index) =>
+							todo.cIsDone.sample() ? [index] : [],
+						),
+				),
+			})),
+		);
+
+		const aTodos_: NaArray<Todo> = NaArray.hold(
+			[
+				todo("Buy milk"),
+				todo("Buy carrots"),
+			],
+			sAddChange.merge(sRemoveChange,
+				(a, r) => a.union(r),
+			),
+		);
+
+		this._aTodos.loop(aTodos_);
+
+		this.aTodos.cContent.listen((todos) => console.log({ todos }));
 	}
 
 	@LazyGetter()
 	get cAreAllTodosDone(): Cell<boolean> {
-		return this.cTodos.flatMap((todos) =>
-			CellArrays.every(todos, (todo) => todo.cIsDone),
-		);
+		return this.aTodos.every((todo) => todo.cIsDone).calmRefEq();
 	}
 
 	@LazyGetter()
@@ -73,57 +113,21 @@ class TodoList {
 	}
 
 
-	get cTodos(): Cell<ReadonlyArray<Todo>> {
-		return this._cTodos;
+	get aTodos(): NaArrayLoop<Todo> {
+		return this._aTodos;
 	}
 
-	buildCTodos(): Cell<ReadonlyArray<Todo>> {
-		const cTodos = this.cTodos;
-
-		const todo = (text: string) => new Todo(this.sSetDoneAll, text);
-
-		const sTodosAfterAdd = this.sAddTodo.snapshot(cTodos,
-			(newTodoText, todos) =>
-				[...todos, todo(newTodoText)]
-		);
-
-		const sDeleteTodos = Cell.switchS(
-			cTodos.map((todos) =>
-				Stream.mergeSet(
-					new Set(todos.map((todo) => todo.sDelete.mapTo(todo))),
-				),
-			),
-		).orElse(this.sClearCompleted.map(() =>
-			new Set(cTodos.sample().filter((todo) =>
-				todo.cIsDone.sample(),
-			))),
-		);
-
-		const sTodosAfterDelete = sDeleteTodos.snapshot(cTodos,
-			(todosToRemove, todos) =>
-				todos.filter((todo) => !todosToRemove.has(todo)),
-		);
-
-		return sTodosAfterAdd.orElse(sTodosAfterDelete).hold([
-			todo("Buy a unicorn"),
-			todo("Taste JavaScript"),
-			todo("Taste JavaScript (really)!"),
-		]);
-	}
-
-	private buildFilteredTodos(predicate: (todo: Todo) => Cell<boolean>): Cell<ReadonlyArray<Todo>> {
-		return this.cTodos.flatMap((todos) =>
-			CellArrays.filter(todos, predicate),
-		);
+	private buildFilteredTodos(predicate: (todo: Todo) => Cell<boolean>): NaArray<Todo> {
+		return this.aTodos.filterC(predicate);
 	}
 
 	@LazyGetter()
-	get cCompletedTodos(): Cell<ReadonlyArray<Todo>> {
-		return this.buildFilteredTodos((todo) => todo.cIsDone);
+	get aCompletedTodos(): NaArray<Todo> {
+		return this.buildFilteredTodos((todo) => todo.cIsDone.map((d) => d));
 	}
 
 	@LazyGetter()
-	get cUncompletedTodos(): Cell<ReadonlyArray<Todo>> {
+	get aUncompletedTodos(): NaArray<Todo> {
 		return this.buildFilteredTodos((todo) => todo.cIsDone.map((d) => !d));
 	}
 }
@@ -131,7 +135,9 @@ class TodoList {
 function todoAppElement(): NaElement {
 	const todoList = new TodoList();
 
-	const cAnyTodos = todoList.cTodos.map((todos) => todos.length > 0);
+	const cAnyTodos = todoList.aTodos.cLength
+		.map((l) => l > 0)
+		.calmRefEq();
 
 	const toggleAllCheckbox = checkbox({
 		id: "toggle-all",
@@ -160,7 +166,7 @@ function todoAppElement(): NaElement {
 
 	todoList.sAddTodo.loop(sAddTodo);
 
-	const cUncompletedCount = todoList.cUncompletedTodos.map((todos) => todos.length);
+	const cUncompletedCount = todoList.aUncompletedTodos.cLength;
 
 	const clearCompletedButton = button({ className: "clear-completed" }, "Clear completed");
 
@@ -177,9 +183,8 @@ function todoAppElement(): NaElement {
 					toggleAllCheckbox,
 					label({ htmlFor: "toggle-all" }, ["Mark all as complete"]),
 					ul({ className: "todo-list" },
-						todoList.cTodos.map((todos) =>
-							todos.map((todo) => todoElement(todo)),
-						),
+						// TODO: Fix adding new todo after clear-all
+						todoList.aTodos.map((todo) => todoElement(todo)),
 					)
 				]) :
 				empty(),
@@ -199,8 +204,8 @@ function todoAppElement(): NaElement {
 						li([link({ href: "#/completed" }, "Completed")]),
 					]),
 					// Hidden if no completed items are left ↓
-					todoList.cCompletedTodos.map((todos) =>
-						todos.length > 0 ?
+					todoList.aCompletedTodos.cLength.map((l) =>
+						l > 0 ?
 							clearCompletedButton :
 							empty()
 					),
@@ -255,8 +260,6 @@ function todoElement(todo: Todo): NaElement {
 	const sAbortEdit = sEscDown.orElse(sClickedOutside);
 
 	const sEndEditing = sSubmitEdit.orElse(sAbortEdit);
-
-	sEndEditing.listen(() => console.log("End editing"));
 
 	function editing(): Cell<boolean> {
 		return Cell.switchC(sEndEditing.once().map(idle).hold(new Cell(true)));
