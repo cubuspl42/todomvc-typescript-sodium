@@ -2,6 +2,7 @@ import { Stream, StreamSink, Transaction, Unit } from "sodiumjs";
 import { CellOr } from "./utils";
 import { LazyGetter } from "lazy-get-decorator";
 import { Key } from 'ts-keycode-enum';
+import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
 
 interface NaMouseEvent {
 	readonly target: NaElement | null;
@@ -12,6 +13,8 @@ export abstract class NaElement {
 		const htmlElement_ = htmlElement as any;
 		return htmlElement_?._naElement ?? null;
 	}
+
+	abstract get vertex(): NaVertex;
 
 	abstract get htmlElement(): HTMLElement;
 
@@ -79,6 +82,11 @@ export class NaBodyElement extends NaElement {
 	get htmlElement(): HTMLElement {
 		return document.body;
 	}
+
+	@LazyGetter()
+	get vertex(): NaVertex {
+		return new NaNoopVertex();
+	}
 }
 
 export type NaNode = NaElement | string;
@@ -100,6 +108,7 @@ export class NaDOM {
 	): void {
 		Transaction.run(() => {
 			const element = build();
+			element.vertex.incRefCount();
 			container.prepend(element.htmlElement);
 		});
 	}

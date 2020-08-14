@@ -1,6 +1,15 @@
 import { NaElement, NaElementProps, NaNode } from "./dom";
-import { buildElementWithChildren, linkChildren, linkClassName } from "./utils";
+import {
+	buildElementWithChildrenC,
+	linkChildrenC,
+	linkClassName,
+	NaElementChildren,
+	vertexFromChildren
+} from "./utils";
 import { LazyGetter } from "lazy-get-decorator";
+import { NaVertex } from "../sodium-collections/vertex";
+import { NaArray } from "../sodium-collections/array";
+import { Cell } from "sodiumjs";
 
 interface NaLinkElementProps extends NaElementProps {
 	readonly href?: string;
@@ -9,9 +18,9 @@ interface NaLinkElementProps extends NaElementProps {
 export class NaLinkElement extends NaElement {
 	private readonly props?: NaLinkElementProps;
 
-	private readonly children: ReadonlyArray<NaNode>;
+	private readonly children: NaArray<NaNode>;
 
-	constructor(props: NaLinkElementProps | undefined, children: ReadonlyArray<NaNode>) {
+	constructor(props: NaLinkElementProps | undefined, children: NaArray<NaNode>) {
 		super();
 		this.props = props;
 		this.children = children;
@@ -21,7 +30,7 @@ export class NaLinkElement extends NaElement {
 	get htmlElement(): HTMLElement {
 		const element = document.createElement("a");
 		linkClassName(element, this.props);
-		linkChildren(element, this.children);
+		linkChildrenC(element, this.children);
 
 		const href = this.props?.href;
 		if (href !== undefined) {
@@ -30,18 +39,29 @@ export class NaLinkElement extends NaElement {
 
 		return element;
 	}
+
+	@LazyGetter()
+	get vertex(): NaVertex {
+		return vertexFromChildren(this.children);
+	}
 }
 
-export function link(props: NaLinkElementProps, ...children: ReadonlyArray<NaNode>): NaElement;
-export function link(...children: ReadonlyArray<NaNode>): NaElement;
+export function link(props: NaLinkElementProps, children: ReadonlyArray<NaNode>): NaElement;
+export function link(children: ReadonlyArray<NaNode>): NaElement;
+
+export function link(props: NaLinkElementProps, children: NaArray<NaNode>): NaElement;
+export function link(children: NaArray<NaNode>): NaElement;
+
+export function link(props: NaLinkElementProps, children: ReadonlyArray<NaNode | Cell<NaNode>>): NaElement;
+export function link(children: ReadonlyArray<NaNode | Cell<NaNode>>): NaElement;
 
 export function link(
-	arg0: NaLinkElementProps | NaNode,
-	...children: ReadonlyArray<NaNode>
+	arg0: NaLinkElementProps | NaElementChildren,
+	arg1?: NaElementChildren,
 ): NaElement {
-	return buildElementWithChildren(
+	return buildElementWithChildrenC(
 		arg0,
-		children,
+		arg1,
 		(p, c) => new NaLinkElement(p, c),
 	);
 }

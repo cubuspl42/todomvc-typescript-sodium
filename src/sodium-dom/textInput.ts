@@ -2,6 +2,7 @@ import { NaElement, NaElementProps } from "./dom";
 import { Cell, Stream, StreamSink, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
 import { linkClassName } from "./utils";
+import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
 
 interface NaTextInputElementProps extends NaElementProps {
 	readonly initialText?: string;
@@ -71,6 +72,11 @@ export class NaTextInputElement extends NaElement {
 		return sSubstituteText
 			.orElse(this.sInputChanged)
 			.hold(this.props?.initialText ?? "");
+	}
+
+	@LazyGetter()
+	get vertex(): NaVertex {
+		return new NaNoopVertex();
 	}
 }
 

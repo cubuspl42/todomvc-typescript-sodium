@@ -2,6 +2,7 @@ import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps } from "./dom";
 import { Cell, Stream, StreamSink } from "sodiumjs";
 import { linkClassName } from "./utils";
+import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
 
 interface NaCheckboxElementProps extends NaElementProps {
 	readonly initialChecked?: boolean,
@@ -55,6 +56,11 @@ export class NaCheckboxElement extends NaElement {
 		linkClassName(element, this.props);
 
 		return element;
+	}
+
+	@LazyGetter()
+	get vertex(): NaVertex {
+		return new NaNoopVertex();
 	}
 }
 

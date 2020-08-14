@@ -1,8 +1,15 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps, NaNode } from "./dom";
-import { buildElementWithChildrenC, linkChildrenC, linkClassName, NaElementChildren } from "./utils";
+import {
+	buildElementWithChildrenC,
+	linkChildrenC,
+	linkClassName,
+	NaElementChildren,
+	vertexFromChildren
+} from "./utils";
 import { Cell } from "sodiumjs";
 import { NaArray } from "../sodium-collections/array";
+import { NaVertex } from "../sodium-collections/vertex";
 
 interface NaLabelElementProps extends NaElementProps {
 	readonly htmlFor?: string;
@@ -29,6 +36,11 @@ export class NaLabelElement extends NaElement {
 		linkClassName(element, this.props);
 		linkChildrenC(element, this.children);
 		return element;
+	}
+
+	@LazyGetter()
+	get vertex(): NaVertex {
+		return vertexFromChildren(this.children);
 	}
 }
 

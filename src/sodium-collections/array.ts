@@ -107,20 +107,30 @@ export class NaArray<A> {
 	}
 
 	static create<A>(props: {
-		sUpdate: Stream<[number, A]>,
-		sInsert: Stream<[number, A]>,
-		sAppend: Stream<A>,
-		sDelete: Stream<number>,
-		sClear: Stream<Unit>,
+		sUpdate?: Stream<[number, A]>,
+		sInsert?: Stream<[number, A]>,
+		sAppend?: Stream<A>,
+		sDelete?: Stream<number>,
+		sClear?: Stream<Unit>,
 	}): NaArray<A> {
-		const selfLoop = new NaArrayLoop<A>();
-		const sChange = props.sUpdate
-			.map(([index, value]) => NaArrayChange.update(index, value))
-			.orElse(props.sInsert.map(([index, value]) => NaArrayChange.insert(index, [value])))
-			.orElse(props.sAppend.map((value) => NaArrayChange.insert(selfLoop.cLength.sample(), [value])))
-			.orElse(props.sDelete.map((index) => NaArrayChange.delete(index)))
-			.orElse(props.sClear.map(() => selfLoop.clearChange()));
-		return new NaArray<A>(new Cell([]), sChange);
+		const self = new NaArrayLoop<A>();
+		const sUpdate = props.sUpdate ?? new Stream();
+		const sInsert = props.sInsert ?? new Stream();
+		const sAppend = props.sAppend ?? new Stream();
+		const sDelete = props.sDelete ?? new Stream();
+		const sClear = props.sClear ?? new Stream();
+
+		const sChange = sUpdate.map(([index, value]) => NaArrayChange.update(index, value))
+			.orElse(sInsert.map(([index, value]) => NaArrayChange.insert(index, [value])))
+			.orElse(sAppend.map((value) => NaArrayChange.insert(self.cLength.sample(), [value])))
+			.orElse(sDelete.map((index) => NaArrayChange.delete(index)))
+			.orElse(sClear.map(() => self.clearChange()));
+
+		const self_ = new NaArray<A>(new Cell([]), sChange);
+
+		self.loop(self_);
+
+		return self_;
 	}
 
 	static hold<A>(
@@ -136,12 +146,18 @@ export class NaArray<A> {
 
 	static melt<A>(cells: ReadonlyArray<Cell<A>> | NaArray<Cell<A>>): NaArray<A> {
 		if (cells instanceof Array) {
+			const arrayCell = Cell.liftArray(cells as Array<Cell<A>>);
 			return NaArray.hold(
 				cells.map((c) => c.sample()),
-				Operational.updates(Cell.liftArray(cells as Array<Cell<A>>)).map((array) => {
-					const entries = array.map((value, index): [number, A] => [index, value]);
-					// TODO: Filter changed values
-					return new NaArrayChange<A>({ updates: new Map(entries) });
+				Operational.updates(arrayCell).map((newArray) => {
+					const oldArray = arrayCell.sample();
+					const entries = newArray.map((newValue, index): [number, A] => [index, newValue]);
+					return new NaArrayChange<A>({
+						updates: new Map(entries.filter(([index, newValue]) => {
+							const oldValue = oldArray[index];
+							return oldValue !== newValue;
+						}))
+					});
 				})
 			);
 		} else {
@@ -184,14 +200,16 @@ export class NaArray<A> {
 
 	@LazyGetter()
 	get cLength(): Cell<number> {
-		return this.cContent.map((arr) => arr.length);
+		return this.cContent.map((arr) => arr.length).calmRefEq();
 	}
 
 	map<B>(f: (a: A) => B): NaArray<B> {
-		return NaArray.hold(
+		const naArray = NaArray.hold(
 			this.cContent.sample().map(f),
 			this.sChange.map((c) => c.map(f)),
-		)
+		);
+		(naArray as any)._source = this;
+		return naArray;
 	}
 
 	filterC(f: (a: A) => Cell<boolean>): NaArray<A> {

@@ -2,6 +2,7 @@ import { NaElement, NaElementProps, NaNode } from "./dom";
 import { Cell } from "sodiumjs";
 import { NaGenericElement } from "./genericElement";
 import { NaArray } from "../sodium-collections/array";
+import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
 
 export type CellOr<A> = Cell<A> | A;
 
@@ -58,7 +59,7 @@ export function buildElementWithChildrenC<TElementProps extends NaElementProps, 
 	if (arg0 instanceof NaArray || arg0 instanceof Array) {
 		return build(undefined, normalizeNaElementChildren(arg0));
 	} else {
-		return build(arg0 as TElementProps, normalizeNaElementChildren(arg1!));
+		return build(arg0 as TElementProps, normalizeNaElementChildren(arg1 ?? []));
 	}
 }
 
@@ -98,7 +99,6 @@ export function linkChildrenC(htmlElement: HTMLElement, children: NaArray<NaNode
 		htmlElement.appendChild(childNode);
 	});
 
-	// TODO: Unlisten
 	children.sChange.listen((c) => {
 		c.updates?.forEach((element, index) => {
 			const oldNode = htmlElement.childNodes[index];
@@ -129,7 +129,7 @@ export function linkChildrenC(htmlElement: HTMLElement, children: NaArray<NaNode
 		deletedNodes.forEach((node) => {
 			htmlElement.removeChild(node);
 		});
-	});
+	}, true);
 }
 
 export function linkClassName(htmlElement: HTMLElement, props: NaElementProps | undefined) {
@@ -144,4 +144,12 @@ export function linkClassName(htmlElement: HTMLElement, props: NaElementProps | 
 			htmlElement.className = className;
 		}
 	}
+}
+
+export function vertexFromChildren(children: NaArray<NaNode>) {
+	return NaVertex.from(
+		children,
+		(n) =>
+			n instanceof NaElement ? n.vertex : new NaNoopVertex(),
+	);
 }

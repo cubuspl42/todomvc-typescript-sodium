@@ -168,7 +168,7 @@ function todoAppElement(): NaElement {
 
 	const cUncompletedCount = todoList.aUncompletedTodos.cLength;
 
-	const clearCompletedButton = button({ className: "clear-completed" }, "Clear completed");
+	const clearCompletedButton = button({ className: "clear-completed" }, ["Clear completed"]);
 
 	todoList.sClearCompleted.loop(clearCompletedButton.sPressed);
 
@@ -199,9 +199,9 @@ function todoAppElement(): NaElement {
 					]),
 					// Remove this if you don't implement routing
 					ul({ className: "filters" }, [
-						li([link({ className: "selected", href: "#/" }, "All")]),
-						li([link({ href: "#/active" }, "Active")]),
-						li([link({ href: "#/completed" }, "Completed")]),
+						li([link({ className: "selected", href: "#/" }, ["All"])]),
+						li([link({ href: "#/active" }, ["Active"])]),
+						li([link({ href: "#/completed" }, ["Completed"])]),
 					]),
 					// Hidden if no completed items are left ↓
 					todoList.aCompletedTodos.cLength.map((l) =>
