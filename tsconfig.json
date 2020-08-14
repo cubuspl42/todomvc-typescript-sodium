@@ -11,7 +11,8 @@
 	"noImplicitAny": true,
 	"strict": true,
 	"experimentalDecorators": true,
-	"downlevelIteration": true
+	"downlevelIteration": true,
+    "allowSyntheticDefaultImports": true
   },
   "exclude": [
 	"node_modules",

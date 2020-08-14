@@ -19,6 +19,11 @@ import { span } from "./sodium-dom/span";
 import { strong } from "./sodium-dom/strong";
 import { link } from "./sodium-dom/a";
 import { NaArray, NaArrayChange, NaArrayLoop } from "./sodium-collections/array";
+import * as cytoscape from 'cytoscape';
+import * as coseBilkent from 'cytoscape-cose-bilkent';
+import { showGraph } from "./graph";
+
+cytoscape.use(coseBilkent);
 
 class Todo {
 	constructor(
@@ -287,3 +292,5 @@ NaDOM.render(
 	todoAppElement,
 	document.body,
 );
+
+// showGraph();
