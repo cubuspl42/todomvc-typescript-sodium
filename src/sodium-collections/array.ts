@@ -1,4 +1,4 @@
-import { Cell, CellLoop, Operational, Stream, StreamLoop, Unit } from "sodiumjs";
+import { Cell, CellLoop, lambda1, Operational, Stream, StreamLoop, Unit } from "sodiumjs";
 import { CellArrays, Maps } from "../utils";
 import { LazyGetter } from "lazy-get-decorator";
 
@@ -86,7 +86,7 @@ export class NaArrayChange<A> {
 }
 
 function range(n: number): ReadonlyArray<number> {
-	return Array(5).fill(0).map((x, i) => i);
+	return Array(n).fill(0).map((x, i) => i);
 }
 
 export class NaArray<A> {
@@ -175,10 +175,15 @@ export class NaArray<A> {
 
 	static switch<A>(cell: Cell<ReadonlyArray<A>>): NaArray<A> {
 		const self = new NaArrayLoop<A>();
-		const sChange = Operational.updates(cell).map((elements) => new NaArrayChange({
-			deletes: new Set(range(self.cLength.sample())),
-			inserts: new Map([[0, elements]]),
-		}));
+		const cLength = self.cLength;
+		const sChange = Operational.updates(cell).map(lambda1((elements) => {
+			const length = cLength.sample();
+			const change = new NaArrayChange({
+				deletes: new Set(range(length)),
+				inserts: new Map([[0, elements]]),
+			});
+			return change;
+		}, [cLength]));
 		const self_ = new NaArray<A>(cell, sChange);
 		self.loop(self_);
 		return self_;
