@@ -35,7 +35,7 @@ export abstract class NaVertex {
 		if (f !== undefined) {
 			return NaVertex.from((deps as NaArray<A>).map(f));
 		} else {
-			return new NaArrayNode(deps as NaArray<NaVertex>);
+			return new NaArrayVertex(deps as NaArray<NaVertex>);
 		}
 	}
 }
@@ -69,7 +69,7 @@ class NaVertexVertex extends NaVertex {
 }
 
 
-class NaArrayNode extends NaVertex {
+class NaArrayVertex extends NaVertex {
 	private kill2?: () => void;
 
 	constructor(
