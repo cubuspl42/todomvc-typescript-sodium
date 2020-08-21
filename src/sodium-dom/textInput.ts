@@ -1,5 +1,5 @@
 import { NaElement, NaElementProps } from "./dom";
-import { Cell, Stream, StreamSink, Unit } from "sodiumjs";
+import { Cell, Stream, StreamSink, Transaction, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
 import { linkClassName } from "./utils";
 import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
@@ -30,9 +30,11 @@ export class NaTextInputElement extends NaElement {
 			element.placeholder = placeholder;
 		}
 
-		// TODO: Unlisten
-		this.props?.sSubstituteText?.listen((text) => {
-			element.value = text;
+		Transaction.post(() => {
+			// TODO: Unlisten
+			this.props?.sSubstituteText?.listen((text) => {
+				element.value = text;
+			});
 		});
 
 		const sFocus = this.props?.sFocus;

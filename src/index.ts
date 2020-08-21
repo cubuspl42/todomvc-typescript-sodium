@@ -102,7 +102,7 @@ class TodoList {
 
 		this._aTodos.loop(aTodos_);
 
-		this.aTodos.cContent.listen((todos) => console.log({ todos }));
+		// this.aTodos.cContent.listen((todos) => console.log({ todos }));
 	}
 
 	@LazyGetter()

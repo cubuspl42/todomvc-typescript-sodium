@@ -1,5 +1,5 @@
 import { NaElement, NaElementProps, NaNode } from "./dom";
-import { Cell } from "sodiumjs";
+import { Cell, Transaction } from "sodiumjs";
 import { NaGenericElement } from "./genericElement";
 import { NaArray } from "../sodium-collections/array";
 import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
@@ -99,37 +99,39 @@ export function linkChildrenC(htmlElement: HTMLElement, children: NaArray<NaNode
 		htmlElement.appendChild(childNode);
 	});
 
-	children.sChange.listen((c) => {
-		c.updates?.forEach((element, index) => {
-			const oldNode = htmlElement.childNodes[index];
-			const newNode = buildNode(element);
-			htmlElement.replaceChild(newNode, oldNode);
-		});
+	Transaction.post(() => {
+		children.sChange.listen((c) => {
+			c.updates?.forEach((element, index) => {
+				const oldNode = htmlElement.childNodes[index];
+				const newNode = buildNode(element);
+				htmlElement.replaceChild(newNode, oldNode);
+			});
 
-		c.swaps?.forEach((targetIndex, sourceIndex) => {
-			const node1 = htmlElement.childNodes[sourceIndex];
-			const node2 = htmlElement.childNodes[targetIndex];
-			swapElements(node1, node2);
-		});
+			c.swaps?.forEach((targetIndex, sourceIndex) => {
+				const node1 = htmlElement.childNodes[sourceIndex];
+				const node2 = htmlElement.childNodes[targetIndex];
+				swapElements(node1, node2);
+			});
 
-		const deletes = c.deletes ?? new Set();
-		const deletedNodes = [...deletes.values()].map(
-			(index) => htmlElement.childNodes[index],
-		);
+			const deletes = c.deletes ?? new Set();
+			const deletedNodes = [...deletes.values()].map(
+				(index) => htmlElement.childNodes[index],
+			);
 
-		c.inserts?.forEach((elements, index) => {
-			const newNodes = elements.map(buildNode);
+			c.inserts?.forEach((elements, index) => {
+				const newNodes = elements.map(buildNode);
 
-			let node: Node = htmlElement.childNodes[index] ?? null;
-			newNodes.reverse().forEach((newNode) => {
-				node = htmlElement.insertBefore(newNode, node);
-			})
-		});
+				let node: Node = htmlElement.childNodes[index] ?? null;
+				newNodes.reverse().forEach((newNode) => {
+					node = htmlElement.insertBefore(newNode, node);
+				})
+			});
 
-		deletedNodes.forEach((node) => {
-			htmlElement.removeChild(node);
-		});
-	}, true);
+			deletedNodes.forEach((node) => {
+				htmlElement.removeChild(node);
+			});
+		}, true);
+	});
 }
 
 export function linkClassName(htmlElement: HTMLElement, props: NaElementProps | undefined) {

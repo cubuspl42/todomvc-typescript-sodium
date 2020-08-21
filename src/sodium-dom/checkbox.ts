@@ -1,6 +1,6 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps } from "./dom";
-import { Cell, Stream, StreamSink } from "sodiumjs";
+import { Cell, Stream, StreamSink, Transaction } from "sodiumjs";
 import { linkClassName } from "./utils";
 import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
 
@@ -20,10 +20,12 @@ export class NaCheckboxElement extends NaElement {
 
 		const sSetChecked = props?.sSetChecked ?? new Stream<boolean>();
 
-		// TODO: Unlisten
-		sSetChecked.listen((c) => {
-			this.htmlElement.checked = c;
-		})
+		Transaction.post(() => {
+			// TODO: Unlisten
+			sSetChecked.listen((c) => {
+				this.htmlElement.checked = c;
+			});
+		});
 
 		this.cChecked = this.sChange.orElse(sSetChecked)
 			.hold(props?.initialChecked ?? false);
