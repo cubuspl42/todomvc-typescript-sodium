@@ -10,7 +10,7 @@ import { section } from "./sodium-dom/section";
 import { header } from "./sodium-dom/header";
 import { h1 } from "./sodium-dom/h1";
 import { Key } from "ts-keycode-enum";
-import { Cell, Operational, Stream, StreamLoop, Unit } from "sodiumjs";
+import { Cell, Operational, Stream, StreamLoop, StreamSlot, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
 import "./sodiumjs";
 import { empty } from "./sodium-dom/emptyElement";
@@ -21,7 +21,6 @@ import { link } from "./sodium-dom/a";
 import { NaArray, NaArrayChange, NaArrayLoop } from "./sodium-collections/array";
 import * as cytoscape from 'cytoscape';
 import * as coseBilkent from 'cytoscape-cose-bilkent';
-import { showGraph } from "./graph";
 
 cytoscape.use(coseBilkent);
 
@@ -38,26 +37,26 @@ class Todo {
 
 	readonly text: Cell<string>;
 
-	readonly sSetDone = new StreamLoop<boolean>();
+	readonly sSetDone = new StreamSlot<boolean>();
 
 	@LazyGetter()
 	get cIsDone(): Cell<boolean> {
 		return this.sSetDoneAll.orElse(this.sSetDone).hold(false);
 	}
 
-	readonly sDelete = new StreamLoop<Unit>();
+	readonly sDelete = new StreamSlot<Unit>();
 
-	readonly sEdit = new StreamLoop<string>();
+	readonly sEdit = new StreamSlot<string>();
 }
 
 class TodoList {
 	private readonly _aTodos = new NaArrayLoop<Todo>();
 
-	readonly sAddTodo = new StreamLoop<string>();
+	readonly sAddTodo = new StreamSlot<string>();
 
-	readonly sToggleAll = new StreamLoop<Unit>()
+	readonly sToggleAll = new StreamSlot<Unit>()
 
-	readonly sClearCompleted = new StreamLoop<Unit>();
+	readonly sClearCompleted = new StreamSlot<Unit>();
 
 	constructor() {
 		const todo = (text: string) => new Todo(this.sSetDoneAll, text);
@@ -151,7 +150,7 @@ function todoAppElement(): NaElement {
 		initialChecked: todoList.cAreAllTodosDone.sample(),
 	});
 
-	todoList.sToggleAll.loop(toggleAllCheckbox.sChange);
+	todoList.sToggleAll.connect(toggleAllCheckbox.sChange);
 
 	const sClearNewTodoInput = new StreamLoop<Unit>();
 
@@ -169,13 +168,13 @@ function todoAppElement(): NaElement {
 
 	sClearNewTodoInput.loop(sAddTodo);
 
-	todoList.sAddTodo.loop(sAddTodo);
+	todoList.sAddTodo.connect(sAddTodo);
 
 	const cUncompletedCount = todoList.aUncompletedTodos.cLength;
 
 	const clearCompletedButton = button({ className: "clear-completed" }, ["Clear completed"]);
 
-	todoList.sClearCompleted.loop(clearCompletedButton.sPressed);
+	todoList.sClearCompleted.connect(clearCompletedButton.sPressed);
 
 	return section({ className: "todoapp" }, [
 			header({ className: "header" }, [
@@ -230,13 +229,13 @@ function todoElement(todo: Todo): NaElement {
 		sSetChecked: Operational.updates(todo.cIsDone),
 	});
 
-	todo.sSetDone.loop(todoCheckbox.sChange);
+	todo.sSetDone.connect(todoCheckbox.sChange);
 
 	const todoLabel = label([todo.text]);
 
 	const deleteButton = button({ className: "destroy" });
 
-	todo.sDelete.loop(deleteButton.sPressed);
+	todo.sDelete.connect(deleteButton.sPressed);
 
 	const sStartEditing = todoLabel.sDoubleClick;
 
@@ -272,7 +271,7 @@ function todoElement(todo: Todo): NaElement {
 
 	const cEditing = idle();
 
-	todo.sEdit.loop(sSubmitEdit.snapshot1(todoTextEdit.cText));
+	todo.sEdit.connect(sSubmitEdit.snapshot1(todoTextEdit.cText));
 
 	const liClassName = todo.cIsDone.lift(cEditing, (d, e) =>
 		`${d ? "completed" : ""} ${e ? "editing" : ""}`,
