@@ -10,7 +10,7 @@ import { section } from "./sodium-dom/section";
 import { header } from "./sodium-dom/header";
 import { h1 } from "./sodium-dom/h1";
 import { Key } from "ts-keycode-enum";
-import { Cell, Operational, Stream, StreamLoop, StreamSlot, Unit } from "sodiumjs";
+import { Cell, lambda1, Operational, Stream, StreamLoop, StreamSlot, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
 import "./sodiumjs";
 import { empty } from "./sodium-dom/emptyElement";
@@ -187,14 +187,13 @@ function todoAppElement(): NaElement {
 					toggleAllCheckbox,
 					label({ htmlFor: "toggle-all" }, ["Mark all as complete"]),
 					ul({ className: "todo-list" },
-						// TODO: Fix adding new todo after clear-all
 						todoList.aTodos.map((todo) => todoElement(todo)),
 					)
 				]) :
 				empty(),
 			),
 			// This footer should hidden by default and shown when there are todos
-			cAnyTodos.map((a) => a ?
+			cAnyTodos.map(lambda1((a) => a ?
 				footer({ className: "footer" }, [
 					// This should be `0 items left` by default
 					span({ className: "todo-count" }, [
@@ -215,7 +214,8 @@ function todoAppElement(): NaElement {
 					),
 				]) :
 				empty(),
-			),
+				[cUncompletedCount],
+			)),
 		]
 	);
 }
