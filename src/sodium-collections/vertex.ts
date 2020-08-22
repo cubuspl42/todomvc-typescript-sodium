@@ -86,7 +86,7 @@ class NaArrayVertex extends NaVertex {
 		});
 
 		this.array.cContent.vertex.incRefCount();
-		this.kill2 = this.array.sChange.listen((c) => {
+		this.kill2 = this.array.sChange.process((c) => {
 			// console.assert(this.refCount > 0);
 
 			const content = this.array.cContent.sample();
