@@ -39,7 +39,7 @@ export class NaButtonElement extends NaElement {
 
 		const sink = new StreamSink<Unit>();
 
-		// TODO: Unlisten
+		// TODO: Unlisten (StreamSource?)
 		element.addEventListener("click", (event) => {
 			sink.send(Unit.UNIT);
 		});

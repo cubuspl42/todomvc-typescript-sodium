@@ -73,6 +73,7 @@ export function todoAppElement(): NaElement {
 			href: href,
 		}, [text]);
 
+	// TODO: Implement routing
 	const cTodoFilter = new CellLoop<TodoFilter>();
 
 	const allLink = filterLink(TodoFilter.all, "#/", "All");
@@ -137,6 +138,7 @@ export function todoAppElement(): NaElement {
 					),
 				]) :
 				empty(),
+				// TODO: Implement composable vertices
 				[cUncompletedCount],
 			)),
 		]
