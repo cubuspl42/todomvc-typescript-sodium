@@ -218,6 +218,8 @@ export class NaArray<A> {
 	}
 
 	filterC(f: (a: A) => Cell<boolean>): NaArray<A> {
+		// TODO: Optimize this
+		// Emit minimal number of insert/delete changes
 		return NaArray.switch(this.cContent.flatMap((elements) =>
 			CellArrays.filter(elements, f)),
 		);

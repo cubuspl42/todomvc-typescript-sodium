@@ -84,6 +84,19 @@ export function todoAppElement(): NaElement {
 		.orElse(completedLink.sFollowed.mapTo(TodoFilter.completed))
 		.hold(TodoFilter.all));
 
+	const todoFilterFn = (todo: Todo): Cell<boolean> => {
+		return cTodoFilter.flatMap((f) => {
+			switch (f) {
+				case TodoFilter.all:
+					return new Cell(true);
+				case TodoFilter.active:
+					return todo.cIsActive;
+				case TodoFilter.completed:
+					return todo.cIsCompleted;
+			}
+		});
+	};
+
 	return section({ className: "todoapp" }, [
 			header({ className: "header" }, [
 				h1(["todos"]),
@@ -95,7 +108,9 @@ export function todoAppElement(): NaElement {
 					toggleAllCheckbox,
 					label({ htmlFor: "toggle-all" }, ["Mark all as complete"]),
 					ul({ className: "todo-list" },
-						todoList.aTodos.map((todo) => todoElement(todo)),
+						todoList.aTodos
+							.filterC(todoFilterFn)
+							.map((todo) => todoElement(todo)),
 					)
 				]) :
 				empty(),
@@ -133,11 +148,11 @@ export function todoAppElement(): NaElement {
 function todoElement(todo: Todo): NaElement {
 	const todoCheckbox = checkbox({
 		className: "toggle",
-		initialChecked: todo.cIsDone.sample(),
-		sSetChecked: Operational.updates(todo.cIsDone),
+		initialChecked: todo.cIsCompleted.sample(),
+		sSetChecked: Operational.updates(todo.cIsCompleted),
 	});
 
-	todo.sSetDone.connect(todoCheckbox.sChange);
+	todo.sComplete.connect(todoCheckbox.sChange);
 
 	const todoLabel = label([todo.text]);
 
@@ -181,7 +196,7 @@ function todoElement(todo: Todo): NaElement {
 
 	todo.sEdit.connect(sSubmitEdit.snapshot1(todoTextEdit.cText));
 
-	const liClassName = todo.cIsDone.lift(cEditing, (d, e) =>
+	const liClassName = todo.cIsCompleted.lift(cEditing, (d, e) =>
 		`${d ? "completed" : ""} ${e ? "editing" : ""}`,
 	);
 

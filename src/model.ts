@@ -5,22 +5,27 @@ import { NaArray, NaArrayChange, NaArrayLoop } from "./sodium-collections/array"
 
 export class Todo {
 	constructor(
-		sSetDoneAll: Stream<boolean>,
+		cCompleteAll: Stream<boolean>,
 		text: string,
 	) {
-		this.sSetDoneAll = sSetDoneAll;
+		this.sCompleteAll = cCompleteAll;
 		this.text = this.sEdit.hold(text);
 	}
 
-	private readonly sSetDoneAll: Stream<boolean>;
+	private readonly sCompleteAll: Stream<boolean>;
 
 	readonly text: Cell<string>;
 
-	readonly sSetDone = new StreamSlot<boolean>();
+	readonly sComplete = new StreamSlot<boolean>();
 
 	@LazyGetter()
-	get cIsDone(): Cell<boolean> {
-		return this.sSetDoneAll.orElse(this.sSetDone).hold(false);
+	get cIsCompleted(): Cell<boolean> {
+		return this.sCompleteAll.orElse(this.sComplete).hold(false);
+	}
+
+	@LazyGetter()
+	get cIsActive(): Cell<boolean> {
+		return this.cIsCompleted.map((c) => !c).calmRefEq();
 	}
 
 	readonly sDelete = new StreamSlot<Unit>();
@@ -38,7 +43,7 @@ export class TodoList {
 	readonly sClearCompleted = new StreamSlot<Unit>();
 
 	constructor() {
-		const todo = (text: string) => new Todo(this.sSetDoneAll, text);
+		const todo = (text: string) => new Todo(this.sCompleteAll, text);
 
 		const aTodos = this._aTodos;
 
@@ -62,7 +67,7 @@ export class TodoList {
 				deletes: new Set(
 					aTodos.cContent.sample()
 						.flatMap((todo, index) =>
-							todo.cIsDone.sample() ? [index] : [],
+							todo.cIsCompleted.sample() ? [index] : [],
 						),
 				),
 			})),
@@ -85,11 +90,11 @@ export class TodoList {
 
 	@LazyGetter()
 	get cAreAllTodosDone(): Cell<boolean> {
-		return this.aTodos.every((todo) => todo.cIsDone).calmRefEq();
+		return this.aTodos.every((todo) => todo.cIsCompleted).calmRefEq();
 	}
 
 	@LazyGetter()
-	private get sSetDoneAll(): Stream<boolean> {
+	private get sCompleteAll(): Stream<boolean> {
 		return this.sToggleAll
 			.snapshot1(this.cAreAllTodosDone)
 			.map((b) => !b);
@@ -106,11 +111,11 @@ export class TodoList {
 
 	@LazyGetter()
 	get aCompletedTodos(): NaArray<Todo> {
-		return this.buildFilteredTodos((todo) => todo.cIsDone.map((d) => d));
+		return this.buildFilteredTodos((todo) => todo.cIsCompleted.map((d) => d));
 	}
 
 	@LazyGetter()
 	get aUncompletedTodos(): NaArray<Todo> {
-		return this.buildFilteredTodos((todo) => todo.cIsDone.map((d) => !d));
+		return this.buildFilteredTodos((todo) => todo.cIsCompleted.map((d) => !d));
 	}
 }
