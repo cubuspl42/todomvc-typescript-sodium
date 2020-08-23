@@ -10,14 +10,20 @@ import { section } from "./sodium-dom/section";
 import { header } from "./sodium-dom/header";
 import { h1 } from "./sodium-dom/h1";
 import { Key } from "ts-keycode-enum";
-import { Cell, lambda1, Operational, StreamLoop, Unit } from "sodiumjs";
+import { Cell, CellLoop, lambda1, Operational, StreamLoop, Unit } from "sodiumjs";
 import "./sodiumjs";
 import { empty } from "./sodium-dom/emptyElement";
 import { footer } from "./sodium-dom/footer";
 import { span } from "./sodium-dom/span";
 import { strong } from "./sodium-dom/strong";
-import { link } from "./sodium-dom/a";
+import { link, NaLinkElement } from "./sodium-dom/a";
 import { Todo, TodoList } from "./model";
+
+enum TodoFilter {
+	all,
+	active,
+	completed,
+}
 
 export function todoAppElement(): NaElement {
 	const todoList = new TodoList();
@@ -59,6 +65,25 @@ export function todoAppElement(): NaElement {
 
 	todoList.sClearCompleted.connect(clearCompletedButton.sPressed);
 
+	const filterLink = (todoFilter: TodoFilter, href: string, text: string): NaLinkElement =>
+		link({
+			className: cTodoFilter
+				.map((f) => f === todoFilter).calmRefEq()
+				.map((s) => s ? "selected" : ""),
+			href: href,
+		}, [text]);
+
+	const cTodoFilter = new CellLoop<TodoFilter>();
+
+	const allLink = filterLink(TodoFilter.all, "#/", "All");
+	const activeLink = filterLink(TodoFilter.active, "#/active", "Active");
+	const completedLink = filterLink(TodoFilter.completed, "#/completed", "Completed");
+
+	cTodoFilter.loop(allLink.sFollowed.mapTo(TodoFilter.all)
+		.orElse(activeLink.sFollowed.mapTo(TodoFilter.active))
+		.orElse(completedLink.sFollowed.mapTo(TodoFilter.completed))
+		.hold(TodoFilter.all));
+
 	return section({ className: "todoapp" }, [
 			header({ className: "header" }, [
 				h1(["todos"]),
@@ -85,9 +110,9 @@ export function todoAppElement(): NaElement {
 					]),
 					// Remove this if you don't implement routing
 					ul({ className: "filters" }, [
-						li([link({ className: "selected", href: "#/" }, ["All"])]),
-						li([link({ href: "#/active" }, ["Active"])]),
-						li([link({ href: "#/completed" }, ["Completed"])]),
+						li([allLink]),
+						li([activeLink]),
+						li([completedLink]),
 					]),
 					// Hidden if no completed items are left ↓
 					todoList.aCompletedTodos.cLength.map((l) =>

@@ -137,14 +137,16 @@ export function linkChildrenC(htmlElement: HTMLElement, children: NaArray<NaNode
 export function linkClassName(htmlElement: HTMLElement, props: NaElementProps | undefined) {
 	const className = props?.className;
 	if (className !== undefined) {
-		if (className instanceof Cell) {
-			// TODO: Unlisten
-			className?.listen((c) => {
-				htmlElement.className = c;
-			});
-		} else {
-			htmlElement.className = className;
-		}
+		Transaction.post(() => {
+			if (className instanceof Cell) {
+				// TODO: Unlisten
+				className?.listen((c) => {
+					htmlElement.className = c;
+				});
+			} else {
+				htmlElement.className = className;
+			}
+		});
 	}
 }
 

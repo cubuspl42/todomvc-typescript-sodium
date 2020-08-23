@@ -9,7 +9,7 @@ import {
 import { LazyGetter } from "lazy-get-decorator";
 import { NaVertex } from "../sodium-collections/vertex";
 import { NaArray } from "../sodium-collections/array";
-import { Cell } from "sodiumjs";
+import { Cell, Stream, StreamSink, Unit } from "sodiumjs";
 
 interface NaLinkElementProps extends NaElementProps {
 	readonly href?: string;
@@ -41,24 +41,39 @@ export class NaLinkElement extends NaElement {
 	}
 
 	@LazyGetter()
+	get sFollowed(): Stream<Unit> {
+		const element = this.htmlElement;
+
+		const sink = new StreamSink<Unit>();
+
+		// TODO: Unlisten
+		element.addEventListener("click", (event) => {
+			event.preventDefault();
+			sink.send(Unit.UNIT);
+		});
+
+		return sink;
+	}
+
+	@LazyGetter()
 	get vertex(): NaVertex {
 		return vertexFromChildren(this.children);
 	}
 }
 
-export function link(props: NaLinkElementProps, children: ReadonlyArray<NaNode>): NaElement;
-export function link(children: ReadonlyArray<NaNode>): NaElement;
+export function link(props: NaLinkElementProps, children: ReadonlyArray<NaNode>): NaLinkElement;
+export function link(children: ReadonlyArray<NaNode>): NaLinkElement;
 
-export function link(props: NaLinkElementProps, children: NaArray<NaNode>): NaElement;
-export function link(children: NaArray<NaNode>): NaElement;
+export function link(props: NaLinkElementProps, children: NaArray<NaNode>): NaLinkElement;
+export function link(children: NaArray<NaNode>): NaLinkElement;
 
-export function link(props: NaLinkElementProps, children: ReadonlyArray<NaNode | Cell<NaNode>>): NaElement;
-export function link(children: ReadonlyArray<NaNode | Cell<NaNode>>): NaElement;
+export function link(props: NaLinkElementProps, children: ReadonlyArray<NaNode | Cell<NaNode>>): NaLinkElement;
+export function link(children: ReadonlyArray<NaNode | Cell<NaNode>>): NaLinkElement;
 
 export function link(
 	arg0: NaLinkElementProps | NaElementChildren,
 	arg1?: NaElementChildren,
-): NaElement {
+): NaLinkElement {
 	return buildElementWithChildrenC(
 		arg0,
 		arg1,
