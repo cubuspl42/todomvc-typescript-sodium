@@ -1,8 +1,8 @@
-import { NaElement, NaElementProps } from "./dom";
+import { NaElement, NaElementProps } from "../dom";
 import { Cell, Stream, StreamSink, Transaction, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
-import { linkClassName } from "./utils";
-import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
+import { linkClassName } from "../utils";
+import { NaNoopVertex, NaVertex } from "../../sodium-collections/vertex";
 
 interface NaTextInputElementProps extends NaElementProps {
 	readonly initialText?: string;

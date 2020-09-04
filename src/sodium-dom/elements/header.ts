@@ -1,6 +1,6 @@
-import { NaElement, NaElementProps, NaNode } from "./dom";
-import { buildGenericElementWithChildrenC, NaElementChildren } from "./utils";
-import { NaArray } from "../sodium-collections/array";
+import { NaElement, NaElementProps, NaNode } from "../dom";
+import { buildGenericElementWithChildrenC, NaElementChildren } from "../utils";
+import { NaArray } from "../../sodium-collections/array";
 
 export function header(props: NaElementProps, children: ReadonlyArray<NaNode>): NaElement;
 export function header(children: ReadonlyArray<NaNode>): NaElement;

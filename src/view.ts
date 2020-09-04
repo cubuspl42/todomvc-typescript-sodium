@@ -1,22 +1,22 @@
 import { NaDOM, NaElement } from "./sodium-dom/dom";
-import { li } from "./sodium-dom/li";
-import { div } from "./sodium-dom/div";
-import { checkbox } from "./sodium-dom/checkbox";
-import { label } from "./sodium-dom/label";
-import { button } from "./sodium-dom/button";
-import { textInput } from "./sodium-dom/textInput";
-import { ul } from "./sodium-dom/ul";
-import { section } from "./sodium-dom/section";
-import { header } from "./sodium-dom/header";
-import { h1 } from "./sodium-dom/h1";
+import { li } from "./sodium-dom/elements/li";
+import { div } from "./sodium-dom/elements/div";
+import { checkbox } from "./sodium-dom/elements/checkbox";
+import { label } from "./sodium-dom/elements/label";
+import { button } from "./sodium-dom/elements/button";
+import { textInput } from "./sodium-dom/elements/textInput";
+import { ul } from "./sodium-dom/elements/ul";
+import { section } from "./sodium-dom/elements/section";
+import { header } from "./sodium-dom/elements/header";
+import { h1 } from "./sodium-dom/elements/h1";
 import { Key } from "ts-keycode-enum";
 import { Cell, CellLoop, lambda1, Operational, StreamLoop, Unit } from "sodiumjs";
 import "./sodiumjs";
-import { empty } from "./sodium-dom/emptyElement";
-import { footer } from "./sodium-dom/footer";
-import { span } from "./sodium-dom/span";
-import { strong } from "./sodium-dom/strong";
-import { link, NaLinkElement } from "./sodium-dom/a";
+import { empty } from "./sodium-dom/elements/emptyElement";
+import { footer } from "./sodium-dom/elements/footer";
+import { span } from "./sodium-dom/elements/span";
+import { strong } from "./sodium-dom/elements/strong";
+import { link, NaLinkElement } from "./sodium-dom/elements/link";
 import { Todo, TodoList } from "./model";
 
 enum TodoFilter {

@@ -1,8 +1,8 @@
 import { LazyGetter } from "lazy-get-decorator";
-import { NaElement, NaElementProps, NaNode } from "./dom";
-import { linkChildrenC, linkClassName, vertexFromChildren } from "./utils";
-import { NaArray } from "../sodium-collections/array";
-import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
+import { NaElement, NaElementProps, NaNode } from "../dom";
+import { linkChildrenC, linkClassName, vertexFromChildren } from "../utils";
+import { NaArray } from "../../sodium-collections/array";
+import { NaNoopVertex, NaVertex } from "../../sodium-collections/vertex";
 
 export class NaGenericElement extends NaElement {
 	private readonly tagName: string;

@@ -1,6 +1,6 @@
 import { NaElement, NaElementProps, NaNode } from "./dom";
 import { Cell, Transaction } from "sodiumjs";
-import { NaGenericElement } from "./genericElement";
+import { NaGenericElement } from "./elements/genericElement";
 import { NaArray } from "../sodium-collections/array";
 import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
 

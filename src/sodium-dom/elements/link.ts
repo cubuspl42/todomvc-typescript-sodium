@@ -1,14 +1,14 @@
-import { NaElement, NaElementProps, NaNode } from "./dom";
+import { NaElement, NaElementProps, NaNode } from "../dom";
 import {
 	buildElementWithChildrenC,
 	linkChildrenC,
 	linkClassName,
 	NaElementChildren,
 	vertexFromChildren
-} from "./utils";
+} from "../utils";
 import { LazyGetter } from "lazy-get-decorator";
-import { NaVertex } from "../sodium-collections/vertex";
-import { NaArray } from "../sodium-collections/array";
+import { NaVertex } from "../../sodium-collections/vertex";
+import { NaArray } from "../../sodium-collections/array";
 import { Cell, Stream, StreamSink, Unit } from "sodiumjs";
 
 interface NaLinkElementProps extends NaElementProps {

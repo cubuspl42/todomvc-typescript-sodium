@@ -1,6 +1,6 @@
 import { LazyGetter } from "lazy-get-decorator";
-import { NaElement } from "./dom";
-import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
+import { NaElement } from "../dom";
+import { NaNoopVertex, NaVertex } from "../../sodium-collections/vertex";
 
 export class NaEmptyElement extends NaElement {
 	@LazyGetter()

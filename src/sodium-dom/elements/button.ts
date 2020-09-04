@@ -1,15 +1,15 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { Cell, Stream, StreamSink, Unit } from "sodiumjs";
-import { NaElement, NaElementProps, NaNode } from "./dom";
+import { NaElement, NaElementProps, NaNode } from "../dom";
 import {
 	buildElementWithChildrenC,
 	linkChildrenC,
 	linkClassName,
 	NaElementChildren,
 	vertexFromChildren
-} from "./utils";
-import { NaVertex } from "../sodium-collections/vertex";
-import { NaArray } from "../sodium-collections/array";
+} from "../utils";
+import { NaVertex } from "../../sodium-collections/vertex";
+import { NaArray } from "../../sodium-collections/array";
 
 interface NaButtonElementProps extends NaElementProps {
 }
