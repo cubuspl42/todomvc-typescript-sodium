@@ -1,8 +1,9 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps, NaNode } from "../dom";
-import { linkChildrenC, linkClassName, vertexFromChildren } from "../utils";
+import { linkChildrenC, linkProps, vertexFromChildren, vertexFromProps } from "../utils";
 import { NaArray } from "../../sodium-collections/array";
-import { NaNoopVertex, NaVertex } from "../../sodium-collections/vertex";
+import { NaVertex } from "../../sodium-collections/vertex";
+import { Arrays } from "../../utils";
 
 export class NaGenericElement extends NaElement {
 	private readonly tagName: string;
@@ -25,7 +26,7 @@ export class NaGenericElement extends NaElement {
 	@LazyGetter()
 	get htmlElement(): HTMLElement {
 		const element = document.createElement(this.tagName);
-		linkClassName(element, this.props);
+		linkProps(element, this.props);
 		linkChildrenC(element, this.children);
 
 		(element as any)._naElement = this;
@@ -35,6 +36,9 @@ export class NaGenericElement extends NaElement {
 
 	@LazyGetter()
 	get vertex(): NaVertex {
-		return vertexFromChildren(this.children);
+		return NaVertex.from(Arrays.filterNotNull([
+			vertexFromProps(this.props),
+			vertexFromChildren(this.children),
+		]));
 	}
 }

@@ -3,13 +3,15 @@ import { NaElement, NaElementProps, NaNode } from "../dom";
 import {
 	buildElementWithChildrenC,
 	linkChildrenC,
-	linkClassName,
+	linkProps,
 	NaElementChildren,
-	vertexFromChildren
+	vertexFromChildren,
+	vertexFromProps
 } from "../utils";
 import { Cell } from "sodiumjs";
 import { NaArray } from "../../sodium-collections/array";
 import { NaVertex } from "../../sodium-collections/vertex";
+import { Arrays } from "../../utils";
 
 interface NaLabelElementProps extends NaElementProps {
 	readonly htmlFor?: string;
@@ -33,14 +35,17 @@ export class NaLabelElement extends NaElement {
 		if (htmlFor !== undefined) {
 			element.htmlFor = htmlFor;
 		}
-		linkClassName(element, this.props);
+		linkProps(element, this.props);
 		linkChildrenC(element, this.children);
 		return element;
 	}
 
 	@LazyGetter()
 	get vertex(): NaVertex {
-		return vertexFromChildren(this.children);
+		return NaVertex.from(Arrays.filterNotNull([
+			vertexFromProps(this.props),
+			vertexFromChildren(this.children),
+		]));
 	}
 }
 

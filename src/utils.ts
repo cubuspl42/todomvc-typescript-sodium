@@ -1,5 +1,11 @@
 import { Cell } from "sodiumjs";
 
+export class Arrays {
+	static filterNotNull<A>(arr: ReadonlyArray<A | null>): ReadonlyArray<A> {
+		return arr.filter((a) => a !== null) as ReadonlyArray<A>;
+	}
+}
+
 export class Maps {
 	static mapValues<K, V1, V2>(m: ReadonlyMap<K, V1>, f: (v1: V1) => V2): ReadonlyMap<K, V2> {
 		return new Map(Array.from(m).map(([k, v]): [K, V2] => [k, f(v)]));

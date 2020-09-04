@@ -1,9 +1,10 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps } from "../dom";
 import { Cell, Stream, Transaction } from "sodiumjs";
-import { linkClassName } from "../utils";
-import { NaNoopVertex, NaVertex } from "../../sodium-collections/vertex";
+import { linkProps, vertexFromProps } from "../utils";
+import { NaVertex } from "../../sodium-collections/vertex";
 import { eventSource } from "../eventSource";
+import { Arrays } from "../../utils";
 
 interface NaCheckboxElementProps extends NaElementProps {
 	readonly initialChecked?: boolean,
@@ -22,10 +23,9 @@ export class NaCheckboxElement extends NaElement {
 		const sSetChecked = props?.sSetChecked ?? new Stream<boolean>();
 
 		Transaction.post(() => {
-			// TODO: Unlisten
 			sSetChecked.listen((c) => {
 				this.htmlElement.checked = c;
-			});
+			}, true);
 		});
 
 		this.cChecked = this.sChange.orElse(sSetChecked)
@@ -51,14 +51,17 @@ export class NaCheckboxElement extends NaElement {
 		if (id !== undefined) {
 			element.id = id;
 		}
-		linkClassName(element, this.props);
+		linkProps(element, this.props);
 
 		return element;
 	}
 
 	@LazyGetter()
 	get vertex(): NaVertex {
-		return new NaNoopVertex();
+		return NaVertex.from(Arrays.filterNotNull([
+			vertexFromProps(this.props),
+			this.sChange.vertex,
+		]));
 	}
 }
 

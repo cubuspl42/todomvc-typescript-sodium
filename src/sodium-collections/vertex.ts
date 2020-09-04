@@ -1,79 +1,51 @@
 import { NaArray } from "./array";
-import { Vertex } from "sodiumjs";
+import { _Vertex, Vertex } from "sodiumjs";
 
 export abstract class NaVertex {
-	private _refCount = 0;
+	static from(deps: ReadonlyArray<Vertex>): Vertex;
 
-	protected get refCount() {
-		return this._refCount;
-	}
+	static from(deps: NaArray<Vertex>): Vertex;
 
-	incRefCount(): () => void {
-		++this._refCount;
-		if (this._refCount === 1) {
-			this.initialize();
-		}
-		return () => this._decRefCount();
-	}
+	static from<A>(deps: NaArray<A>, f: (a: A) => Vertex): Vertex;
 
-	_decRefCount() {
-		--this._refCount;
-		if (this._refCount === 0) {
-			this.uninitialize();
-		}
-	}
-
-	protected abstract initialize(): void;
-
-	protected abstract uninitialize(): void;
-
-	static from(deps: NaArray<NaVertex>): NaVertex;
-
-	static from<A>(deps: NaArray<A>, f: (a: A) => NaVertex): NaVertex;
-
-	static from<A>(deps: NaArray<NaVertex> | NaArray<A>, f?: (a: A) => NaVertex): NaVertex {
-		if (f !== undefined) {
+	static from<A>(deps: NaArray<Vertex> | NaArray<A> | ReadonlyArray<Vertex>, f?: (a: A) => Vertex): Vertex {
+		if (deps instanceof Array) {
+			return new ArrayVertex(deps);
+		} else if (f !== undefined) {
 			return NaVertex.from((deps as NaArray<A>).map(f));
 		} else {
-			return new NaArrayVertex(deps as NaArray<NaVertex>);
+			return new NaArrayVertex(deps as NaArray<Vertex>);
 		}
 	}
 }
 
-export class NaNoopVertex extends NaVertex {
+export class NaNoopVertex extends _Vertex {
 	constructor() {
 		super();
 	}
 
-	protected initialize(): void {
-	}
-
-	protected uninitialize(): void {
+	buildVisited(): boolean {
+		return false;
 	}
 }
 
-class NaVertexVertex extends NaVertex {
+class ArrayVertex extends _Vertex {
 	constructor(
-		private readonly vertex: Vertex,
+		private readonly dependencies: ReadonlyArray<Vertex>,
 	) {
-		super();
+		super(dependencies);
 	}
 
-	protected initialize(): void {
-		this.vertex.incRefCount();
-	}
-
-	protected uninitialize(): void {
-		this.vertex.decRefCount();
+	buildVisited(): boolean {
+		return false;
 	}
 }
 
-
-class NaArrayVertex extends NaVertex {
+class NaArrayVertex extends _Vertex {
 	private kill2?: () => void;
 
 	constructor(
-		private readonly array: NaArray<NaVertex>,
+		private readonly array: NaArray<Vertex>,
 	) {
 		super();
 	}
@@ -81,11 +53,11 @@ class NaArrayVertex extends NaVertex {
 	protected initialize(): void {
 		const content = this.array.cContent.sample();
 
-		content.forEach((node) => {
-			node.incRefCount();
+		content.forEach((vertex) => {
+			(vertex as _Vertex).incRefCount();
 		});
 
-		this.array.cContent.vertex.incRefCount();
+		this.array.cContent._vertex.incRefCount();
 		this.kill2 = this.array.sChange.process((c) => {
 			// console.assert(this.refCount > 0);
 
@@ -95,21 +67,21 @@ class NaArrayVertex extends NaVertex {
 				for (const [i, newNode] of c.updates!.entries()) {
 					const oldNode = content[i];
 					if (oldNode !== newNode) {
-						oldNode._decRefCount();
-						newNode.incRefCount();
+						(oldNode as _Vertex).decRefCount();
+						(newNode as _Vertex).incRefCount();
 					}
 				}
 			}
 
-			c.inserts?.forEach((nodes) => {
-				nodes.forEach((node) => {
-					node.incRefCount();
+			c.inserts?.forEach((vertices) => {
+				vertices.forEach((vertex) => {
+					(vertex as _Vertex).incRefCount();
 				});
 			});
 
 			c.deletes?.forEach((i) => {
-				const node = content[i];
-				node._decRefCount();
+				const vertex = content[i];
+				(vertex as _Vertex).decRefCount();
 			});
 		});
 	}
@@ -117,12 +89,16 @@ class NaArrayVertex extends NaVertex {
 	protected uninitialize(): void {
 		const content = this.array.cContent.sample();
 
-		content.forEach((node) => {
-			node._decRefCount();
+		content.forEach((vertex) => {
+			(vertex as _Vertex).decRefCount();
 		});
 
-		this.array.cContent.vertex.decRefCount();
+		this.array.cContent._vertex.decRefCount();
 		this.kill2!();
+	}
+
+	buildVisited(): boolean {
+		throw new Error("Method not implemented.");
 	}
 
 }

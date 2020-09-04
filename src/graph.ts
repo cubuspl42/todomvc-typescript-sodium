@@ -1,9 +1,9 @@
 import * as cytoscape from 'cytoscape';
 import { ElementDefinition, LayoutOptions } from 'cytoscape';
-import { Vertex } from "sodiumjs";
+import { _Vertex } from "sodiumjs";
 
 export function showGraph() {
-	const elements = Vertex.all.flatMap((v) => {
+	const elements = _Vertex.all.flatMap((v) => {
 		const dependents = v.dependents ?? new Set();
 		const edges = [...dependents].map<ElementDefinition>((d) =>
 			({

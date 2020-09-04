@@ -2,15 +2,17 @@ import { NaElement, NaElementProps, NaNode } from "../dom";
 import {
 	buildElementWithChildrenC,
 	linkChildrenC,
-	linkClassName,
+	linkProps,
 	NaElementChildren,
-	vertexFromChildren
+	vertexFromChildren,
+	vertexFromProps
 } from "../utils";
 import { LazyGetter } from "lazy-get-decorator";
 import { NaVertex } from "../../sodium-collections/vertex";
 import { NaArray } from "../../sodium-collections/array";
 import { Cell, Stream, Unit } from "sodiumjs";
 import { eventSource } from "../eventSource";
+import { Arrays } from "../../utils";
 
 interface NaLinkElementProps extends NaElementProps {
 	readonly href?: string;
@@ -30,7 +32,7 @@ export class NaLinkElement extends NaElement {
 	@LazyGetter()
 	get htmlElement(): HTMLElement {
 		const element = document.createElement("a");
-		linkClassName(element, this.props);
+		linkProps(element, this.props);
 		linkChildrenC(element, this.children);
 
 		const href = this.props?.href;
@@ -49,7 +51,10 @@ export class NaLinkElement extends NaElement {
 
 	@LazyGetter()
 	get vertex(): NaVertex {
-		return vertexFromChildren(this.children);
+		return NaVertex.from(Arrays.filterNotNull([
+			vertexFromProps(this.props),
+			vertexFromChildren(this.children),
+		]));
 	}
 }
 

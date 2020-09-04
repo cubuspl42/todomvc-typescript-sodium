@@ -1,4 +1,4 @@
-import { Stream, Transaction, Unit } from "sodiumjs";
+import { _Vertex, Stream, Transaction, Unit } from "sodiumjs";
 import { CellOr } from "./utils";
 import { LazyGetter } from "lazy-get-decorator";
 import { Key } from 'ts-keycode-enum';
@@ -81,7 +81,8 @@ export class NaDOM {
 	): void {
 		Transaction.run(() => {
 			const element = build();
-			element.vertex.incRefCount();
+			// TODO: Support "un-rendering"
+			(element.vertex as _Vertex).incRefCount();
 			container.prepend(element.htmlElement);
 		});
 	}

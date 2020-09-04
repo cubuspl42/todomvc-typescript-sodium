@@ -1,5 +1,5 @@
 import { NaElement, NaElementProps, NaNode } from "./dom";
-import { Cell, Transaction } from "sodiumjs";
+import { Cell, Transaction, Vertex } from "sodiumjs";
 import { NaGenericElement } from "./elements/genericElement";
 import { NaArray } from "../sodium-collections/array";
 import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
@@ -134,23 +134,39 @@ export function linkChildrenC(htmlElement: HTMLElement, children: NaArray<NaNode
 	});
 }
 
-export function linkClassName(htmlElement: HTMLElement, props: NaElementProps | undefined) {
+function linkClassName(htmlElement: HTMLElement, props: NaElementProps | undefined) {
 	const className = props?.className;
 	if (className !== undefined) {
-		Transaction.post(() => {
-			if (className instanceof Cell) {
-				// TODO: Unlisten
-				className?.listen((c) => {
+		if (className instanceof Cell) {
+			Transaction.post(() => {
+				className.listen((c) => {
 					htmlElement.className = c;
-				});
-			} else {
-				htmlElement.className = className;
-			}
-		});
+				}, true);
+			});
+		} else {
+			htmlElement.className = className;
+		}
+	}
+	return null;
+}
+
+function vertexOrNull<A>(cellOr: CellOr<A> | undefined) {
+	if (cellOr instanceof Cell) {
+		return cellOr.vertex;
+	} else {
+		return null;
 	}
 }
 
-export function vertexFromChildren(children: NaArray<NaNode>) {
+export function linkProps(htmlElement: HTMLElement, props: NaElementProps | undefined): void {
+	linkClassName(htmlElement, props);
+}
+
+export function vertexFromProps(props: NaElementProps | undefined): Vertex | null {
+	return vertexOrNull(props?.className);
+}
+
+export function vertexFromChildren(children: NaArray<NaNode>): Vertex {
 	return NaVertex.from(
 		children,
 		(n) =>

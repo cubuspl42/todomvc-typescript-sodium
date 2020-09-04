@@ -4,13 +4,15 @@ import { NaElement, NaElementProps, NaNode } from "../dom";
 import {
 	buildElementWithChildrenC,
 	linkChildrenC,
-	linkClassName,
+	linkProps,
 	NaElementChildren,
-	vertexFromChildren
+	vertexFromChildren,
+	vertexFromProps
 } from "../utils";
 import { NaVertex } from "../../sodium-collections/vertex";
 import { NaArray } from "../../sodium-collections/array";
 import { eventSource } from "../eventSource";
+import { Arrays } from "../../utils";
 
 interface NaButtonElementProps extends NaElementProps {
 }
@@ -29,7 +31,7 @@ export class NaButtonElement extends NaElement {
 	@LazyGetter()
 	get htmlElement(): HTMLButtonElement {
 		const element = document.createElement("button");
-		linkClassName(element, this.props);
+		linkProps(element, this.props);
 		linkChildrenC(element, this.children);
 		return element;
 	}
@@ -42,7 +44,10 @@ export class NaButtonElement extends NaElement {
 
 	@LazyGetter()
 	get vertex(): NaVertex {
-		return vertexFromChildren(this.children);
+		return NaVertex.from(Arrays.filterNotNull([
+			vertexFromProps(this.props),
+			vertexFromChildren(this.children),
+		]));
 	}
 }
 

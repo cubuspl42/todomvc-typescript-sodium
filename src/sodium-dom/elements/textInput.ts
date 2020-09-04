@@ -1,9 +1,10 @@
 import { NaElement, NaElementProps } from "../dom";
 import { Cell, Stream, Transaction, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
-import { linkClassName } from "../utils";
-import { NaNoopVertex, NaVertex } from "../../sodium-collections/vertex";
+import { NaVertex } from "../../sodium-collections/vertex";
 import { eventSource } from "../eventSource";
+import { linkProps, vertexFromProps } from "../utils";
+import { Arrays } from "../../utils";
 
 interface NaTextInputElementProps extends NaElementProps {
 	readonly initialText?: string;
@@ -24,7 +25,7 @@ export class NaTextInputElement extends NaElement {
 	@LazyGetter()
 	get htmlElement(): HTMLInputElement {
 		const element = document.createElement("input");
-		linkClassName(element, this.props);
+		linkProps(element, this.props);
 
 		const placeholder = this.props?.placeholder;
 		if (placeholder !== undefined) {
@@ -32,10 +33,9 @@ export class NaTextInputElement extends NaElement {
 		}
 
 		Transaction.post(() => {
-			// TODO: Unlisten
 			this.props?.sSubstituteText?.listen((text) => {
 				element.value = text;
-			});
+			}, true);
 		});
 
 		const sFocus = this.props?.sFocus;
@@ -71,7 +71,10 @@ export class NaTextInputElement extends NaElement {
 
 	@LazyGetter()
 	get vertex(): NaVertex {
-		return new NaNoopVertex();
+		return NaVertex.from(Arrays.filterNotNull([
+			vertexFromProps(this.props),
+			this.props?.sSubstituteText?.vertex ?? null,
+		]));
 	}
 }
 
