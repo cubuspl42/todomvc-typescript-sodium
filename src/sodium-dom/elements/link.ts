@@ -48,7 +48,6 @@ export class NaLinkElement extends NaElement {
 
 		// TODO: Unlisten
 		element.addEventListener("click", (event) => {
-			event.preventDefault();
 			sink.send(Unit.UNIT);
 		});
 

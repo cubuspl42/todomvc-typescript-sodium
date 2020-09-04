@@ -10,7 +10,7 @@ import { section } from "./sodium-dom/elements/section";
 import { header } from "./sodium-dom/elements/header";
 import { h1 } from "./sodium-dom/elements/h1";
 import { Key } from "ts-keycode-enum";
-import { Cell, CellLoop, lambda1, Operational, StreamLoop, Unit } from "sodiumjs";
+import { Cell, lambda1, Operational, StreamLoop, Unit } from "sodiumjs";
 import "./sodiumjs";
 import { empty } from "./sodium-dom/elements/emptyElement";
 import { footer } from "./sodium-dom/elements/footer";
@@ -18,14 +18,15 @@ import { span } from "./sodium-dom/elements/span";
 import { strong } from "./sodium-dom/elements/strong";
 import { link, NaLinkElement } from "./sodium-dom/elements/link";
 import { Todo, TodoList } from "./model";
+import { Router } from "./sodium-dom/router";
 
-enum TodoFilter {
+export enum TodoFilter {
 	all,
 	active,
 	completed,
 }
 
-export function todoAppElement(): NaElement {
+export function todoAppElement(router: Router): NaElement {
 	const todoList = new TodoList();
 
 	const cAnyTodos = todoList.aTodos.cLength
@@ -65,6 +66,12 @@ export function todoAppElement(): NaElement {
 
 	todoList.sClearCompleted.connect(clearCompletedButton.sPressed);
 
+	const cTodoFilter = router.dispatch({
+		"/": () => TodoFilter.all,
+		"/active": () => TodoFilter.active,
+		"/completed": () => TodoFilter.completed,
+	});
+
 	const filterLink = (todoFilter: TodoFilter, href: string, text: string): NaLinkElement =>
 		link({
 			className: cTodoFilter
@@ -73,20 +80,12 @@ export function todoAppElement(): NaElement {
 			href: href,
 		}, [text]);
 
-	// TODO: Implement routing
-	const cTodoFilter = new CellLoop<TodoFilter>();
-
 	const allLink = filterLink(TodoFilter.all, "#/", "All");
 	const activeLink = filterLink(TodoFilter.active, "#/active", "Active");
 	const completedLink = filterLink(TodoFilter.completed, "#/completed", "Completed");
 
-	cTodoFilter.loop(allLink.sFollowed.mapTo(TodoFilter.all)
-		.orElse(activeLink.sFollowed.mapTo(TodoFilter.active))
-		.orElse(completedLink.sFollowed.mapTo(TodoFilter.completed))
-		.hold(TodoFilter.all));
-
-	const todoFilterFn = (todo: Todo): Cell<boolean> => {
-		return cTodoFilter.flatMap(lambda1((f: TodoFilter) => {
+	const filterTodo = (todo: Todo): Cell<boolean> =>
+		cTodoFilter.flatMap(lambda1((f: TodoFilter) => {
 			switch (f) {
 				case TodoFilter.all:
 					return new Cell(true);
@@ -96,7 +95,6 @@ export function todoAppElement(): NaElement {
 					return todo.cIsCompleted;
 			}
 		}, [todo.cIsActive, todo.cIsCompleted]));
-	};
 
 	return section({ className: "todoapp" }, [
 			header({ className: "header" }, [
@@ -110,7 +108,7 @@ export function todoAppElement(): NaElement {
 					label({ htmlFor: "toggle-all" }, ["Mark all as complete"]),
 					ul({ className: "todo-list" },
 						todoList.aTodos
-							.filterC(todoFilterFn)
+							.filterC(filterTodo)
 							.map((todo) => todoElement(todo)),
 					)
 				]) :
@@ -154,6 +152,7 @@ function todoElement(todo: Todo): NaElement {
 		sSetChecked: Operational.updates(todo.cIsCompleted),
 	});
 
+	// TODO: Disconnect
 	todo.sComplete.connect(todoCheckbox.sChange);
 
 	const todoLabel = label([todo.text]);
