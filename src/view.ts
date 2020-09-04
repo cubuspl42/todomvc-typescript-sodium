@@ -86,7 +86,7 @@ export function todoAppElement(): NaElement {
 		.hold(TodoFilter.all));
 
 	const todoFilterFn = (todo: Todo): Cell<boolean> => {
-		return cTodoFilter.flatMap((f) => {
+		return cTodoFilter.flatMap(lambda1((f: TodoFilter) => {
 			switch (f) {
 				case TodoFilter.all:
 					return new Cell(true);
@@ -95,7 +95,7 @@ export function todoAppElement(): NaElement {
 				case TodoFilter.completed:
 					return todo.cIsCompleted;
 			}
-		});
+		}, [todo.cIsActive, todo.cIsCompleted]));
 	};
 
 	return section({ className: "todoapp" }, [
