@@ -1,20 +1,14 @@
-import { Cell, StreamSink } from "sodiumjs";
+import { Cell } from "sodiumjs";
+import { eventSource } from "./eventSource";
 
 type DispatchTable<A> = {
 	[path: string]: () => A;
 }
 
 export class Router {
-	private readonly onHashChange = new StreamSink<string>();
+	private readonly onHashChange = eventSource(window, 'hashchange').map(() => location.hash);
 
 	private readonly cHash = this.onHashChange.hold(location.hash);
-
-	constructor() {
-		// TODO: Unlisten
-		window.addEventListener('hashchange', (e) => {
-			this.onHashChange.send(location.hash);
-		}, false);
-	}
 
 	dispatch<A>(table: DispatchTable<A>): Cell<A> {
 		return this.cHash.map((hash) => {

@@ -1,8 +1,9 @@
 import { NaElement, NaElementProps } from "../dom";
-import { Cell, Stream, StreamSink, Transaction, Unit } from "sodiumjs";
+import { Cell, Stream, Transaction, Unit } from "sodiumjs";
 import { LazyGetter } from "lazy-get-decorator";
 import { linkClassName } from "../utils";
 import { NaNoopVertex, NaVertex } from "../../sodium-collections/vertex";
+import { eventSource } from "../eventSource";
 
 interface NaTextInputElementProps extends NaElementProps {
 	readonly initialText?: string;
@@ -57,15 +58,7 @@ export class NaTextInputElement extends NaElement {
 	@LazyGetter()
 	get sInputChanged(): Stream<string> {
 		const element = this.htmlElement;
-
-		const sink = new StreamSink<string>();
-
-		// TODO: Unlisten
-		element.addEventListener("input", (event) => {
-			sink.send(element.value);
-		});
-
-		return sink;
+		return eventSource(element, "input").map(() => element.value);
 	}
 
 	@LazyGetter()

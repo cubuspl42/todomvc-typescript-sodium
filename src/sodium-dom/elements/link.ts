@@ -9,7 +9,8 @@ import {
 import { LazyGetter } from "lazy-get-decorator";
 import { NaVertex } from "../../sodium-collections/vertex";
 import { NaArray } from "../../sodium-collections/array";
-import { Cell, Stream, StreamSink, Unit } from "sodiumjs";
+import { Cell, Stream, Unit } from "sodiumjs";
+import { eventSource } from "../eventSource";
 
 interface NaLinkElementProps extends NaElementProps {
 	readonly href?: string;
@@ -43,15 +44,7 @@ export class NaLinkElement extends NaElement {
 	@LazyGetter()
 	get sFollowed(): Stream<Unit> {
 		const element = this.htmlElement;
-
-		const sink = new StreamSink<Unit>();
-
-		// TODO: Unlisten
-		element.addEventListener("click", (event) => {
-			sink.send(Unit.UNIT);
-		});
-
-		return sink;
+		return eventSource(element, "click").map(() => Unit.UNIT);
 	}
 
 	@LazyGetter()

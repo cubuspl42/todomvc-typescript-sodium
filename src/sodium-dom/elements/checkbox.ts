@@ -1,8 +1,9 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps } from "../dom";
-import { Cell, Stream, StreamSink, Transaction } from "sodiumjs";
+import { Cell, Stream, Transaction } from "sodiumjs";
 import { linkClassName } from "../utils";
 import { NaNoopVertex, NaVertex } from "../../sodium-collections/vertex";
+import { eventSource } from "../eventSource";
 
 interface NaCheckboxElementProps extends NaElementProps {
 	readonly initialChecked?: boolean,
@@ -34,15 +35,10 @@ export class NaCheckboxElement extends NaElement {
 	@LazyGetter()
 	get sChange(): Stream<boolean> {
 		const element = this.htmlElement;
-		const sink = new StreamSink<boolean>();
-
-		// TODO: Unlisten
-		element.addEventListener("change", (e) => {
-			const target = e.target as HTMLInputElement;
-			sink.send(target.checked);
+		return eventSource(element, "change").map((ev) => {
+			const target = ev.target as HTMLInputElement;
+			return target.checked;
 		});
-
-		return sink;
 	}
 
 	@LazyGetter()

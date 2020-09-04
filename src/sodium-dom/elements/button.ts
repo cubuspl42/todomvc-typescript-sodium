@@ -1,5 +1,5 @@
 import { LazyGetter } from "lazy-get-decorator";
-import { Cell, Stream, StreamSink, Unit } from "sodiumjs";
+import { Cell, Stream, Unit } from "sodiumjs";
 import { NaElement, NaElementProps, NaNode } from "../dom";
 import {
 	buildElementWithChildrenC,
@@ -10,6 +10,7 @@ import {
 } from "../utils";
 import { NaVertex } from "../../sodium-collections/vertex";
 import { NaArray } from "../../sodium-collections/array";
+import { eventSource } from "../eventSource";
 
 interface NaButtonElementProps extends NaElementProps {
 }
@@ -36,15 +37,7 @@ export class NaButtonElement extends NaElement {
 	@LazyGetter()
 	get sPressed(): Stream<Unit> {
 		const element = this.htmlElement;
-
-		const sink = new StreamSink<Unit>();
-
-		// TODO: Unlisten (StreamSource?)
-		element.addEventListener("click", (event) => {
-			sink.send(Unit.UNIT);
-		});
-
-		return sink;
+		return eventSource(element, "click").map(() => Unit.UNIT);
 	}
 
 	@LazyGetter()

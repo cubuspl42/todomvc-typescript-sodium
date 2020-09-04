@@ -1,8 +1,9 @@
-import { Stream, StreamSink, Transaction, Unit } from "sodiumjs";
+import { Stream, Transaction, Unit } from "sodiumjs";
 import { CellOr } from "./utils";
 import { LazyGetter } from "lazy-get-decorator";
 import { Key } from 'ts-keycode-enum';
 import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
+import { eventSource } from "./eventSource";
 
 interface NaMouseEvent {
 	readonly target: NaElement | null;
@@ -21,55 +22,27 @@ export abstract class NaElement {
 	@LazyGetter()
 	get sKeyDown(): Stream<Key> {
 		const element = this.htmlElement;
-		const sink = new StreamSink<Key>();
-
-		// TODO: Unlisten
-		element.addEventListener("keydown", (event) => {
-			sink.send(event.keyCode as Key);
-		});
-
-		return sink;
+		return eventSource(element, "keydown").map((ev) => ev.keyCode as Key);
 	}
 
 	@LazyGetter()
 	get sKeyUp(): Stream<Key> {
 		const element = this.htmlElement;
-		const sink = new StreamSink<Key>();
-
-		// TODO: Unlisten
-		element.addEventListener("keyup", (event) => {
-			sink.send(event.keyCode as Key);
-		});
-
-		return sink;
+		return eventSource(element, "keyup").map((ev) => ev.keyCode as Key);
 	}
 
 	@LazyGetter()
 	get sDoubleClick(): Stream<Unit> {
 		const element = this.htmlElement;
-		const sink = new StreamSink<Unit>();
-
-		// TODO: Unlisten
-		element.addEventListener("dblclick", (event) => {
-			sink.send(Unit.UNIT);
-		});
-
-		return sink;
+		return eventSource(element, "dblclick").map(() => Unit.UNIT);
 	}
 
 	@LazyGetter()
 	get sClick(): Stream<NaMouseEvent> {
 		const element = this.htmlElement;
-		const sink = new StreamSink<NaMouseEvent>();
-
-		// TODO: Unlisten
-		element.addEventListener("click", (event) => {
-			sink.send({
-				target: NaElement.from(event.target as HTMLElement),
-			});
-		});
-
-		return sink;
+		return eventSource(element, "click").map((ev) => ({
+			target: NaElement.from(ev.target as HTMLElement),
+		}));
 	}
 
 	contains(element: NaElement): boolean {
