@@ -220,9 +220,11 @@ export class NaArray<A> {
 	filterC(f: (a: A) => Cell<boolean>): NaArray<A> {
 		// TODO: Optimize this
 		// Emit minimal number of insert/delete changes
-		return NaArray.switch(this.cContent.flatMap((elements) =>
+		const naArray = NaArray.switch(this.cContent.flatMap((elements) =>
 			CellArrays.filter(elements, f)),
 		);
+		naArray.sChange.rename("filterC/sChange");
+		return naArray;
 	}
 
 	filter(f: (a: A) => boolean): NaArray<A> {

@@ -1,5 +1,5 @@
 import { NaArray } from "./array";
-import { _Vertex, Vertex } from "sodiumjs";
+import { _Vertex, Transaction, Vertex } from "sodiumjs";
 
 export abstract class NaVertex {
 	static from(deps: ReadonlyArray<Vertex>): Vertex;
@@ -37,13 +37,11 @@ class ArrayVertex extends _Vertex {
 	}
 
 	buildVisited(): boolean {
-		return false;
+		throw new Error("Method not implemented.");
 	}
 }
 
 class NaArrayVertex extends _Vertex {
-	private kill2?: () => void;
-
 	constructor(
 		private readonly array: NaArray<Vertex>,
 	) {
@@ -51,18 +49,43 @@ class NaArrayVertex extends _Vertex {
 	}
 
 	protected initialize(): void {
-		const content = this.array.cContent.sample();
+		super.initialize();
+
+		const contentVertex = this.array.cContent._vertex;
+		const content = contentVertex.newValue ?? contentVertex.oldValue;
 
 		content.forEach((vertex) => {
 			(vertex as _Vertex).incRefCount();
 		});
 
-		this.array.cContent._vertex.incRefCount();
-		this.kill2 = this.array.sChange.process((c) => {
-			// console.assert(this.refCount > 0);
+		contentVertex.incRefCount();
+		this.array.sChange._vertex.addDependent(this);
+	}
 
-			const content = this.array.cContent.sample();
+	protected uninitialize(): void {
+		// const content = this.array.cContent.sample();
+		const contentVertex = this.array.cContent._vertex;
+		const content = contentVertex.newValue ?? contentVertex.oldValue;
 
+		// TODO: Don't decRefCount on just-deleted elements
+		content.forEach((vertex) => {
+			(vertex as _Vertex).decRefCount();
+		});
+
+		this.array.sChange._vertex.removeDependent(this);
+		this.array.cContent._vertex.decRefCount();
+
+		super.uninitialize();
+	}
+
+	process(t: Transaction) {
+		const content = this.array.cContent.sample();
+		// const contentVertex = this.array.cContent._vertex;
+		// const content = contentVertex.newValue ?? contentVertex.oldValue;
+
+		const c = this.array.sChange._vertex.newValue;
+
+		if (c !== undefined) {
 			if (c.updates !== undefined) {
 				for (const [i, newNode] of c.updates!.entries()) {
 					const oldNode = content[i];
@@ -83,22 +106,12 @@ class NaArrayVertex extends _Vertex {
 				const vertex = content[i];
 				(vertex as _Vertex).decRefCount();
 			});
-		});
-	}
+		}
 
-	protected uninitialize(): void {
-		const content = this.array.cContent.sample();
-
-		content.forEach((vertex) => {
-			(vertex as _Vertex).decRefCount();
-		});
-
-		this.array.cContent._vertex.decRefCount();
-		this.kill2!();
+		super.process(t);
 	}
 
 	buildVisited(): boolean {
 		throw new Error("Method not implemented.");
 	}
-
 }
