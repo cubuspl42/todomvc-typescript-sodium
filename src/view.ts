@@ -10,7 +10,7 @@ import { section } from "./sodium-dom/elements/section";
 import { header } from "./sodium-dom/elements/header";
 import { h1 } from "./sodium-dom/elements/h1";
 import { Key } from "ts-keycode-enum";
-import { Cell, lambda1, Operational, StreamLoop, Unit } from "sodiumjs";
+import { Cell, lambda1, Operational, Stream, StreamLoop, Unit } from "sodiumjs";
 import "./sodiumjs";
 import { empty } from "./sodium-dom/elements/emptyElement";
 import { footer } from "./sodium-dom/elements/footer";
@@ -40,7 +40,9 @@ export function todoAppElement(router: Router): NaElement {
 		initialChecked: todoList.cAreAllTodosDone.sample(),
 	});
 
-	todoList.sToggleAll.connect(toggleAllCheckbox.sChange);
+	todoList.sToggleAll.connect(toggleAllCheckbox.sChange,
+		{ sDisconnect: new Stream<Unit>() },
+	);
 
 	const sClearNewTodoInput = new StreamLoop<Unit>();
 
@@ -58,13 +60,19 @@ export function todoAppElement(router: Router): NaElement {
 
 	sClearNewTodoInput.loop(sAddTodo);
 
-	todoList.sAddTodo.connect(sAddTodo);
+	todoList.sAddTodo.connect(
+		sAddTodo,
+		{ sDisconnect: new Stream<Unit>() },
+	);
 
 	const cUncompletedCount = todoList.aUncompletedTodos.cLength;
 
 	const clearCompletedButton = button({ className: "clear-completed" }, ["Clear completed"]);
 
-	todoList.sClearCompleted.connect(clearCompletedButton.sPressed);
+	todoList.sClearCompleted.connect(
+		clearCompletedButton.sPressed,
+		{ sDisconnect: new Stream<Unit>() },
+	);
 
 	const cTodoFilter = router.dispatch({
 		"/": () => TodoFilter.all,
@@ -152,14 +160,19 @@ function todoElement(todo: Todo): NaElement {
 		sSetChecked: Operational.updates(todo.cIsCompleted),
 	});
 
-	// TODO: Disconnect
-	todo.sComplete.connect(todoCheckbox.sChange);
+	todo.sComplete.connect(
+		todoCheckbox.sChange,
+		{ sDisconnect: new Stream<Unit>() },
+	);
 
 	const todoLabel = label([todo.text]);
 
 	const deleteButton = button({ className: "destroy" });
 
-	todo.sDelete.connect(deleteButton.sPressed);
+	todo.sDelete.connect(
+		deleteButton.sPressed,
+		{ sDisconnect: new Stream<Unit>() },
+	);
 
 	const sStartEditing = todoLabel.sDoubleClick;
 
@@ -195,7 +208,10 @@ function todoElement(todo: Todo): NaElement {
 
 	const cEditing = idle();
 
-	todo.sEdit.connect(sSubmitEdit.snapshot1(todoTextEdit.cText));
+	todo.sEdit.connect(
+		sSubmitEdit.snapshot1(todoTextEdit.cText),
+		{ sDisconnect: new Stream<Unit>() },
+	);
 
 	const liClassName = todo.cIsCompleted.lift(cEditing, (d, e) =>
 		`${d ? "completed" : ""} ${e ? "editing" : ""}`,
