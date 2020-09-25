@@ -1,4 +1,4 @@
-import { Cell, CellLoop, lambda1, Operational, Stream, StreamLoop, Unit } from "sodiumjs";
+import { Cell, CellLoop, lambda1, Lazy, Operational, Stream, StreamLoop, Unit } from "sodiumjs";
 import { CellArrays, Maps } from "../utils";
 import { LazyGetter } from "lazy-get-decorator";
 
@@ -95,12 +95,12 @@ export class NaArray<A> {
 	readonly sChange: Stream<NaArrayChange<A>>;
 
 	constructor(
-		initial: Cell<ReadonlyArray<A>>,
+		initial: Lazy<ReadonlyArray<A>>,
 		sChange?: Stream<NaArrayChange<A>>,
 	) {
 		const sChange_ = sChange ?? new Stream<NaArrayChange<A>>();
 		this.cContent = sChange_.accumLazy(
-			initial.sampleLazy(),
+			initial,
 			(c, a) => c.apply(a),
 		);
 		this.sChange = sChange_;
@@ -126,7 +126,7 @@ export class NaArray<A> {
 			.orElse(sDelete.map((index) => NaArrayChange.delete(index)))
 			.orElse(sClear.map(() => self.clearChange()));
 
-		const self_ = new NaArray<A>(new Cell([]), sChange);
+		const self_ = new NaArray<A>(new Lazy(() => []), sChange);
 
 		self.loop(self_);
 
@@ -137,7 +137,14 @@ export class NaArray<A> {
 		initial: ReadonlyArray<A>,
 		sChange?: Stream<NaArrayChange<A>>,
 	): NaArray<A> {
-		return new NaArray<A>(new Cell(initial), sChange);
+		return new NaArray<A>(new Lazy(() => initial), sChange);
+	}
+
+	static holdLazy<A>(
+		initial: Lazy<ReadonlyArray<A>>,
+		sChange?: Stream<NaArrayChange<A>>,
+	): NaArray<A> {
+		return new NaArray<A>(initial, sChange);
 	}
 
 	static melt<A>(cells: ReadonlyArray<Cell<A>>): NaArray<A>;
@@ -167,10 +174,12 @@ export class NaArray<A> {
 
 	static merge<A>(cells: NaArray<Stream<A>>): Stream<Map<number, A>>;
 
-	static merge<A>(cells: ReadonlyArray<Stream<A>>): Stream<Map<number, A>>;
+	// static merge<A>(cells: ReadonlyArray<Stream<A>>): Stream<Map<number, A>>;
 
-	static merge<A>(cells: NaArray<Stream<A>> | ReadonlyArray<Stream<A>>): Stream<Map<number, A>> {
-		throw new Error("Unimplemented");
+	static merge<A>(cells: NaArray<Stream<A>>): Stream<Map<number, A>> {
+		return Cell.switchS(cells.cContent.map(
+			(a) => Stream.mergeArray(a),
+		));
 	}
 
 	static switch<A>(cell: Cell<ReadonlyArray<A>>): NaArray<A> {
@@ -184,7 +193,7 @@ export class NaArray<A> {
 			});
 			return change;
 		}, [cLength]));
-		const self_ = new NaArray<A>(cell, sChange);
+		const self_ = new NaArray<A>(cell.sampleLazy(), sChange);
 		self.loop(self_);
 		return self_;
 	}
@@ -209,8 +218,8 @@ export class NaArray<A> {
 	}
 
 	map<B>(f: (a: A) => B): NaArray<B> {
-		const naArray = NaArray.hold(
-			this.cContent.sample().map(f),
+		const naArray = NaArray.holdLazy(
+			this.cContent.sampleLazy().map((c) => c.map(f)),
 			this.sChange.map((c) => c.map(f)),
 		);
 		(naArray as any)._source = this;
@@ -232,9 +241,7 @@ export class NaArray<A> {
 	}
 
 	mergeMap<B>(f: (a: A) => Stream<B>): Stream<Map<number, B>> {
-		return Cell.switchS(this.cContent.map(
-			(a) => Stream.mergeArray(a.map(f)),
-		));
+		return NaArray.merge(this.map(f));
 	}
 
 	meltMap<B>(f: (a: A) => Cell<B>): NaArray<B> {
@@ -285,7 +292,7 @@ export class NaArrayLoop<A> extends NaArray<A> {
 		const sChange = new StreamLoop<NaArrayChange<A>>();
 
 		super(
-			initial,
+			initial.sampleLazy(),
 			sChange,
 		);
 

@@ -1,9 +1,9 @@
 import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps, NaNode } from "../dom";
-import { linkChildrenC, linkProps, vertexFromChildren, vertexFromProps } from "../utils";
+import { changesFromChildren, linkChildrenC, linkProps, vertexFromPropsAndChildren } from "../utils";
 import { NaArray } from "../../sodium-collections/array";
 import { NaVertex } from "../../sodium-collections/vertex";
-import { Arrays } from "../../utils";
+import { Stream, Unit } from "sodiumjs";
 
 export class NaGenericElement extends NaElement {
 	private readonly tagName: string;
@@ -36,9 +36,11 @@ export class NaGenericElement extends NaElement {
 
 	@LazyGetter()
 	get vertex(): NaVertex {
-		return NaVertex.from(Arrays.filterNotNull([
-			vertexFromProps(this.props),
-			vertexFromChildren(this.children),
-		]));
+		return vertexFromPropsAndChildren(this.props, this.children);
+	}
+
+	@LazyGetter()
+	get sChanged(): Stream<Unit> {
+		return changesFromChildren(this, this.children);
 	}
 }

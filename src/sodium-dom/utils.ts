@@ -1,8 +1,9 @@
 import { NaElement, NaElementProps, NaNode } from "./dom";
-import { Cell, Transaction, Vertex } from "sodiumjs";
+import { Cell, Stream, Transaction, Unit, Vertex } from "sodiumjs";
 import { NaGenericElement } from "./elements/genericElement";
 import { NaArray } from "../sodium-collections/array";
 import { NaNoopVertex, NaVertex } from "../sodium-collections/vertex";
+import { Arrays } from "../utils";
 
 export type CellOr<A> = Cell<A> | A;
 
@@ -171,5 +172,64 @@ export function vertexFromChildren(children: NaArray<NaNode>): Vertex {
 		children,
 		(n) =>
 			n instanceof NaElement ? n.vertex : new NaNoopVertex(),
+	);
+}
+
+export function vertexFromPropsAndChildren(
+	props: NaElementProps | undefined, children: NaArray<NaNode>
+): Vertex {
+	return NaVertex.from(Arrays.filterNotNull([
+		vertexFromProps(props),
+		vertexFromChildren(children),
+	]));
+}
+
+export function changesFromChildren(self: NaElement, children: NaArray<NaNode>): Stream<Unit> {
+	const t = Transaction.currentTransaction!;
+
+	const initialContent = children.cContent.sample();
+
+	initialContent.forEach((n) => { // FIXME: Attach on attach?
+		if (n instanceof NaElement) {
+			n._addToParent(t, self); // FIXME: Close loop?
+		}
+	});
+
+	return children.sChange.map((c) => {
+		const t = Transaction.currentTransaction!;
+
+		const content = children.cContent.sample();
+
+		c.updates?.forEach((newNode, index) => {
+			const oldNode = content[index];
+			if (oldNode instanceof NaElement) {
+				oldNode._removeFromParent(t, self);
+			}
+			if (newNode instanceof NaElement) {
+				newNode._addToParent(t, self); // TODO: Don't attach to non-attached element
+			}
+		});
+
+		c.deletes?.forEach((index) => {
+			const deletedNode = content[index];
+			if (deletedNode instanceof NaElement) {
+				deletedNode._removeFromParent(t, self);
+			}
+		});
+
+		c.inserts?.forEach((newNodes, index) => {
+			newNodes.forEach((newNode) => {
+				if (newNode instanceof NaElement) {
+					newNode._addToParent(t, self);
+				}
+			})
+		});
+
+		return Unit.UNIT;
+	}).merge(
+		children.mergeMap((c) =>
+			c instanceof NaElement ? c.sChanged : new Stream<Unit>()
+		),
+		(_1, _2) => Unit.UNIT,
 	);
 }

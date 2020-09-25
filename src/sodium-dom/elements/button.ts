@@ -1,18 +1,16 @@
 import { LazyGetter } from "lazy-get-decorator";
-import { Cell, Stream, Unit } from "sodiumjs";
+import { Cell, Stream, Unit, Vertex } from "sodiumjs";
 import { NaElement, NaElementProps, NaNode } from "../dom";
 import {
 	buildElementWithChildrenC,
+	changesFromChildren,
 	linkChildrenC,
 	linkProps,
 	NaElementChildren,
-	vertexFromChildren,
-	vertexFromProps
+	vertexFromPropsAndChildren
 } from "../utils";
-import { NaVertex } from "../../sodium-collections/vertex";
 import { NaArray } from "../../sodium-collections/array";
 import { eventSource } from "../eventSource";
-import { Arrays } from "../../utils";
 
 interface NaButtonElementProps extends NaElementProps {
 }
@@ -43,11 +41,13 @@ export class NaButtonElement extends NaElement {
 	}
 
 	@LazyGetter()
-	get vertex(): NaVertex {
-		return NaVertex.from(Arrays.filterNotNull([
-			vertexFromProps(this.props),
-			vertexFromChildren(this.children),
-		]));
+	get vertex(): Vertex {
+		return vertexFromPropsAndChildren(this.props, this.children);
+	}
+
+	@LazyGetter()
+	get sChanged(): Stream<Unit> {
+		return changesFromChildren(this, this.children);
 	}
 }
 

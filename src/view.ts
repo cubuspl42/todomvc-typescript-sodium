@@ -151,9 +151,9 @@ export function todoAppElement(router: Router): NaElement {
 	);
 }
 
-// These are here just to show the structure of the list items
-// List items should get the class `editing` when editing and `completed` when marked as completed
 function todoElement(todo: Todo): NaElement {
+	const sDetached = new StreamLoop<Unit>();
+
 	const todoCheckbox = checkbox({
 		className: "toggle",
 		initialChecked: todo.cIsCompleted.sample(),
@@ -162,7 +162,7 @@ function todoElement(todo: Todo): NaElement {
 
 	todo.sComplete.connect(
 		todoCheckbox.sChange,
-		{ sDisconnect: new Stream<Unit>() },
+		{ sDisconnect: sDetached },
 	);
 
 	const todoLabel = label([todo.text]);
@@ -171,7 +171,7 @@ function todoElement(todo: Todo): NaElement {
 
 	todo.sDelete.connect(
 		deleteButton.sPressed,
-		{ sDisconnect: new Stream<Unit>() },
+		{ sDisconnect: sDetached },
 	);
 
 	const sStartEditing = todoLabel.sDoubleClick;
@@ -210,14 +210,14 @@ function todoElement(todo: Todo): NaElement {
 
 	todo.sEdit.connect(
 		sSubmitEdit.snapshot1(todoTextEdit.cText),
-		{ sDisconnect: new Stream<Unit>() },
+		{ sDisconnect: sDetached },
 	);
 
 	const liClassName = todo.cIsCompleted.lift(cEditing, (d, e) =>
 		`${d ? "completed" : ""} ${e ? "editing" : ""}`,
 	);
 
-	return li({ className: liClassName }, [
+	const root = li({ className: liClassName }, [
 		div({ className: "view" }, [
 			todoCheckbox,
 			todoLabel,
@@ -225,4 +225,8 @@ function todoElement(todo: Todo): NaElement {
 		]),
 		todoTextEdit,
 	]);
+
+	sDetached.loop(root.sDetached);
+
+	return root;
 }

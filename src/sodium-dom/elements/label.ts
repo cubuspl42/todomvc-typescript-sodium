@@ -2,16 +2,15 @@ import { LazyGetter } from "lazy-get-decorator";
 import { NaElement, NaElementProps, NaNode } from "../dom";
 import {
 	buildElementWithChildrenC,
+	changesFromChildren,
 	linkChildrenC,
 	linkProps,
 	NaElementChildren,
-	vertexFromChildren,
-	vertexFromProps
+	vertexFromPropsAndChildren
 } from "../utils";
-import { Cell } from "sodiumjs";
+import { Cell, Stream, Unit } from "sodiumjs";
 import { NaArray } from "../../sodium-collections/array";
 import { NaVertex } from "../../sodium-collections/vertex";
-import { Arrays } from "../../utils";
 
 interface NaLabelElementProps extends NaElementProps {
 	readonly htmlFor?: string;
@@ -42,10 +41,12 @@ export class NaLabelElement extends NaElement {
 
 	@LazyGetter()
 	get vertex(): NaVertex {
-		return NaVertex.from(Arrays.filterNotNull([
-			vertexFromProps(this.props),
-			vertexFromChildren(this.children),
-		]));
+		return vertexFromPropsAndChildren(this.props, this.children);
+	}
+
+	@LazyGetter()
+	get sChanged(): Stream<Unit> {
+		return changesFromChildren(this, this.children);
 	}
 }
 
